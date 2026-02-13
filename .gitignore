@@ -1,0 +1,9 @@
+.snakemake
+*.gz
+*.out
+*.pos
+*.sh
+logs
+logs_slurm
+results*
+seedms

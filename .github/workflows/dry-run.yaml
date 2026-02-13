@@ -1,0 +1,20 @@
+name: dry-run
+
+on: [push, pull_request]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Add micromamba to system path
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        environment-name: sstar-qr-analysis
+        environment-file: workflow/envs/env.yaml
+    - name: dry-run
+      run: |
+        micromamba run -n sstar-qr-analysis snakemake -np
