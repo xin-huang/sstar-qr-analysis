@@ -29,10 +29,11 @@ rule sstar_score:
         ref_list=rules.simulate_test_data.output.ref_list,
         tgt_list=rules.simulate_test_data.output.tgt_list,
     output:
-        scores="results/simulation/test/rep_{test_rep}/sstar.phased.rep_{test_rep}.scores.tsv",
+        scores="results/simulation/test/rep_{test_rep}/sstar.{phase_state}.rep_{test_rep}.scores.tsv",
     params:
         win_len=50000,
         win_step=50000,
+        phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
     resources:
         mem_gb=16, cpus=4,
     conda:
@@ -47,7 +48,7 @@ rule sstar_score:
           --thread {resources.cpus} \
           --win-len {params.win_len} \
           --win-step {params.win_step} \
-          --phased \
+          {params.phased_flag} \
         """
 
 
@@ -55,10 +56,10 @@ rule sstar_quantile:
     input:
         model="config/ArchIE_3D19_wo_introgression.yaml",
     output:
-        quantile="results/sstar/rep_{test_rep}/quantile.summary.txt",
+        quantile="results/sstar/{phase_state}/rep_{test_rep}/quantile.summary.txt",
     params:
         ms_dir="resources/msdir",
-        output_dir="results/sstar/rep_{test_rep}",
+        output_dir="results/sstar/{phase_state}/rep_{test_rep}",
     resources:
         time=360, mem_gb=128, cpus=32,
     conda:
@@ -89,7 +90,9 @@ rule sstar_threshold:
         scores=rules.sstar_score.output.scores,
         quantile=rules.sstar_quantile.output.quantile,
     output:
-        preds="results/sstar/rep_{test_rep}/sstar.phased.q_{quantile}.rep_{test_rep}.preds.tsv",
+        preds="results/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.preds.tsv",
+    params:
+        phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
     conda:
         "../envs/sstar.yaml",
     shell:
@@ -101,7 +104,7 @@ rule sstar_threshold:
           --quantile {wildcards.quantile} \
           --output {output.preds} \
           --k 8 \
-          --phased
+          {params.phased_flag}
         """
 
 
@@ -109,19 +112,21 @@ rule get_sstar_inferred_tracts:
     input:
         preds=rules.sstar_threshold.output.preds,
     output:
-        bed="results/sstar/rep_{test_rep}/sstar.phased.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
+        bed="results/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
+    params:
+        phased=lambda wildcards: wildcards.phase_state == "phased",
     shell:
         r"""
-        awk 'BEGIN{{FS=OFS="\t"}} NR==1{{next}} $5>$6 {{print $1,$2,$3,$4}}' {input.preds} | sed 's/hap//' > {output.bed}
+        awk 'BEGIN{{FS=OFS="\t"}} NR==1{{next}} $5>$6 {{print $1,$2,$3,$4}}' {input.preds} | awk 'BEGIN{{FS=OFS="\t"}} {{if ("{params.phased}"=="True") gsub(/hap/, "", $4); print}}' > {output.bed}
         """
 
 
 rule evaluate_sstar:
     input:
-        true_tracts=rules.simulate_test_data.output.bed,
+        true_tracts="results/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.{phase_state}.bed",
         inferred_tracts=rules.get_sstar_inferred_tracts.output.bed,
     output:
-        tsv="results/sstar/rep_{test_rep}/sstar.phased.q_{quantile}.rep_{test_rep}.perf.tsv",
+        tsv="results/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
     params:
         length_bp=200_000_000,
         cutoff="{quantile}",
