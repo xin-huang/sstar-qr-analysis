@@ -1,0 +1,17 @@
+name: sstar
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - demes
+  - numpy
+  - pandas
+  - pip
+  - python=3.8
+  - scikit-allel
+  - scipy
+  - r-base=4.1.2
+  - r-essentials=4.1
+  - rpy2
+  - pip:
+      - git+https://github.com/xin-huang/sstar.git@dev

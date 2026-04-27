@@ -1,0 +1,9 @@
+name: quantile-regression
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - pandas=3.0.2
+  - python=3.11.14
+  - quantile-forest=1.4.1
+  - scikit-learn=1.8.0

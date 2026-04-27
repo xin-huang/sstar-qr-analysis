@@ -1,0 +1,59 @@
+# Copyright 2026 Xin Huang and Andrea Koca
+#
+# GNU General Public License v3.0
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, please see
+#
+#    https://www.gnu.org/licenses/gpl-3.0.en.html
+
+
+import numpy as np
+
+
+TRAINING_REP = 1000
+TEST_REP = 10
+
+np.random.seed(3821)
+rng = np.random.default_rng()
+all_seeds = rng.choice(
+    2**31 - 1,
+    size=TEST_REP * TRAINING_REP + TEST_REP,
+    replace=False
+) + 1
+training_seed_list = all_seeds[:TEST_REP * TRAINING_REP].reshape(TEST_REP, TRAINING_REP).tolist()
+test_seed_list = all_seeds[TEST_REP * TRAINING_REP:].tolist()
+
+cutoffs = np.arange(0.1, 1.0, 0.1).round(1)
+cutoffs = np.concatenate([np.array([0.001, 0.01]), cutoffs, np.array([0.99, 0.999, 0.9999, 0.99999])])
+
+
+rule all:
+    input:
+        expand(
+            "results/{qr_model}/rep_{test_rep}/{qr_model}.{feature_set}.q_{quantile}.rep_{test_rep}.perf.tsv",
+            qr_model=["quantile", "gradient", "qrf"],
+            feature_set=["sstar_snp", "region_snp", "both"],
+            quantile=cutoffs,
+            test_rep=range(TEST_REP),
+        ),
+        expand(
+            "results/sstar/rep_{test_rep}/sstar.phased.q_{quantile}.rep_{test_rep}.perf.tsv",
+            quantile=cutoffs,
+            test_rep=range(TEST_REP),
+        ),
+
+
+include: "rules/simulation.smk"
+include: "rules/sstar.smk"
+include: "rules/qr.smk"
