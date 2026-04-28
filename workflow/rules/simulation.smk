@@ -24,7 +24,8 @@ rule simulate_training_data:
     output:
         ts=temp("results/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.ts"),
         vcf=temp("results/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.vcf"),
-        bed=temp("results/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.true.tracts.bed"),
+        bed_phased=temp("results/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.true.tracts.phased.bed"),
+        bed_unphased=temp("results/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.true.tracts.unphased.bed"),
         ref_list=temp("results/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.ref.list"),
         tgt_list=temp("results/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.tgt.list"),
         src_list=temp("results/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.src.list"),
@@ -39,6 +40,7 @@ rule simulate_training_data:
         ref_id="Reference",
         tgt_id="Target",
         src_id="Source",
+        ploidy=2,
         seed=lambda wildcards: training_seed_list[int(wildcards.test_rep)][int(wildcards.training_rep)],
     resources:
         mem_gb=16,
@@ -52,7 +54,8 @@ rule simulate_test_data:
     output:
         ts=temp("results/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.ts"),
         vcf=temp("results/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.vcf"),
-        bed=temp("results/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.bed"),
+        bed_phased=temp("results/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.phased.bed"),
+        bed_unphased=temp("results/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.unphased.bed"),
         ref_list=temp("results/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.ref.list"),
         tgt_list=temp("results/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.tgt.list"),
         src_list=temp("results/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.src.list"),
@@ -67,6 +70,7 @@ rule simulate_test_data:
         ref_id="Reference",
         tgt_id="Target",
         src_id="Source",
+        ploidy=2,
         seed=lambda wildcards: test_seed_list[int(wildcards.test_rep)],
     resources:
         time=360, mem_gb=16,
@@ -104,10 +108,11 @@ rule calc_training_sstar_score:
         ref_list=rules.simulate_training_data.output.ref_list,
         tgt_list=rules.simulate_training_data.output.tgt_list,
     output:
-        score=temp("results/simulation/training/rep_{test_rep}/sstar.phased.rep_{training_rep}.scores.tsv"),
+        score=temp("results/simulation/training/rep_{test_rep}/sstar.{phase_state}.rep_{training_rep}.scores.tsv"),
     params:
         win_len=50000,
         win_step=50000,
+        phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
     resources:
         mem_gb=16, cpus=4,
     conda:
@@ -122,19 +127,19 @@ rule calc_training_sstar_score:
           --thread {resources.cpus} \
           --win-len {params.win_len} \
           --win-step {params.win_step} \
-          --phased \
+          {params.phased_flag} \
         """
 
 
 rule merge_training_sstar_score:
     input:
         scores=expand(
-            "results/simulation/training/rep_{test_rep}/sstar.phased.rep_{training_rep}.scores.tsv",
+            "results/simulation/training/rep_{test_rep}/sstar.{phase_state}.rep_{training_rep}.scores.tsv",
             training_rep=range(TRAINING_REP),
-            test_rep=range(TEST_REP),
+            allow_missing=True,
         ),
     output:
-        scores="results/simulation/training/rep_{test_rep}/sstar.phased.rep_{test_rep}.training.scores.tsv",
+        scores="results/simulation/training/rep_{test_rep}/sstar.{phase_state}.rep_{test_rep}.training.scores.tsv",
     shell:
         """
         awk 'FNR==1 && NR!=1 {{next}} {{print}}' {input.scores} > {output.scores}

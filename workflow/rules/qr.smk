@@ -23,7 +23,7 @@ rule run_qr:
         training_data=rules.merge_training_sstar_score.output.scores,
         test_data=rules.sstar_score.output.scores,
     output:
-        preds="results/{qr_model}/rep_{test_rep}/{qr_model}.{feature_set}.q_{quantile}.rep_{test_rep}.preds.tsv",
+        preds="results/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{feature_set}.{phase_state}.q_{quantile}.rep_{test_rep}.preds.tsv",
     resources:
         time=720, mem_gb=16,
     conda:
@@ -36,19 +36,21 @@ rule get_qr_inferred_tracts:
     input:
         preds=rules.run_qr.output.preds,
     output:
-        bed="results/{qr_model}/rep_{test_rep}/{qr_model}.{feature_set}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
+        bed="results/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{feature_set}.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
+    params:
+        phased=lambda wildcards: wildcards.phase_state == "phased",
     shell:
         r"""
-        awk 'BEGIN{{FS=OFS="\t"}} NR==1{{next}} $5>$9 {{print $1,$2,$3,$4}}' {input.preds} | sed 's/hap//' > {output.bed}
+        awk 'BEGIN{{FS=OFS="\t"}} NR==1{{next}} $5>$9 {{print $1,$2,$3,$4}}' {input.preds} | awk 'BEGIN{{FS=OFS="\t"}} {{if ("{params.phased}"=="True") gsub(/hap/, "", $4); print}}' > {output.bed}
         """
 
 
 rule evaluate_qr:
     input:
-        true_tracts=rules.simulate_test_data.output.bed,
+        true_tracts="results/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.{phase_state}.bed",
         inferred_tracts=rules.get_qr_inferred_tracts.output.bed,
     output:
-        tsv="results/{qr_model}/rep_{test_rep}/{qr_model}.{feature_set}.q_{quantile}.rep_{test_rep}.perf.tsv",
+        tsv="results/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{feature_set}.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
     params:
         length_bp=200_000_000,
         cutoff="{quantile}",

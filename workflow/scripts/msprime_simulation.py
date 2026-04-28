@@ -1,27 +1,77 @@
-# Copyright 2025 Xin Huang
-#
-# GNU General Public License v3.0
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, please see
-#
-#    https://www.gnu.org/licenses/gpl-3.0.en.html
+"""
+Copyright 2025 Xin Huang
 
+GNU General Public License v3.0
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, please see
+
+   https://www.gnu.org/licenses/gpl-3.0.en.html
+"""
 
 import demes
 import msprime
 import tskit
 import pyranges as pr
+from typing import Optional
+
+
+def get_haplotype_index(
+    ts: tskit.TreeSequence,
+    node_id: int,
+    expected_ploidy: Optional[int] = None,
+) -> int:
+    """
+    Get 1-based haplotype index of a node within its associated individual.
+
+    Parameters
+    ----------
+    ts : tskit.TreeSequence
+        Tree sequence containing node and individual tables.
+    node_id : int
+        Node identifier whose haplotype index will be computed.
+    expected_ploidy : int, optional
+        Expected number of nodes associated with the node's individual. If
+        provided, the function validates that ``len(individual.nodes)`` equals
+        this value.
+
+    Returns
+    -------
+    int
+        One-based position of ``node_id`` in ``ts.individual(ind_id).nodes``.
+
+    Raises
+    ------
+    ValueError
+        If ``node_id`` has no associated individual, if the individual's node
+        count does not match ``expected_ploidy``, or if ``node_id`` is not found
+        in the associated individual's node list.
+    """
+    ind_id = ts.node(node_id).individual
+    if ind_id == tskit.NULL:
+        raise ValueError(f"Node {node_id} has no associated individual.")
+
+    ind_nodes = list(ts.individual(ind_id).nodes)
+    if expected_ploidy is not None and len(ind_nodes) != expected_ploidy:
+        raise ValueError(
+            f"Individual {ind_id} has {len(ind_nodes)} nodes, expected {expected_ploidy}."
+        )
+    try:
+        return ind_nodes.index(node_id) + 1
+    except ValueError as e:
+        raise ValueError(
+            f"Node {node_id} is not listed in individual {ind_id} nodes."
+        ) from e
 
 
 def simulate(
@@ -151,6 +201,7 @@ def get_true_tracts(
     ts: tskit.TreeSequence,
     tgt_id: str,
     src_id: str,
+    is_phased: bool = True,
     ploidy: int = 2,
 ) -> str:
     """
@@ -163,7 +214,10 @@ def get_true_tracts(
 
         Chromosome  Start  End  Sample
 
-    where `Sample` is formatted as `tsk_{individual_id}_{hap_index}`.
+    where `Sample` is formatted as:
+      - `tsk_{individual_id}_{hap_index}` when `is_phased=True`;
+      - `tsk_{individual_id}` when `is_phased=False` (unphased, i.e., union
+        across haplotypes per individual after merge).
 
     Parameters
     ----------
@@ -173,10 +227,10 @@ def get_true_tracts(
         Name of the target population (as stored in ts.populations().metadata["name"]).
     src_id : str
         Name of the source population (as stored in ts.populations().metadata["name"]).
+    is_phased : bool, optional
+        Whether to output haplotype-level sample identifiers. Default is True.
     ploidy : int, optional
-        Ploidy of individuals in the tree sequence, used to derive haplotype index
-        from sample node IDs. Default is 2.
-
+        Ploidy used to infer haplotype index in phased mode. Default is 2.
     Returns
     -------
     str
@@ -208,7 +262,11 @@ def get_true_tracts(
                         right = (
                             m.right if m.right < t.interval.right else t.interval.right
                         )
-                        sample_id = f"tsk_{ts.node(n).individual}_{int(n%ploidy+1)}"
+                        if is_phased:
+                            hap_index = get_haplotype_index(ts, n, ploidy)
+                            sample_id = f"tsk_{ts.node(n).individual}_{hap_index}"
+                        else:
+                            sample_id = f"tsk_{ts.node(n).individual}"
                         tracts += f"1\t{int(left)}\t{int(right)}\t{sample_id}\n"
 
     return tracts
@@ -246,14 +304,22 @@ create_sample_lists(
     src_list=snakemake.output.src_list,
 )
 
-true_tracts = get_true_tracts(
-    ts=ts,
-    tgt_id=snakemake.params.tgt_id,
-    src_id=snakemake.params.src_id,
-)
+true_tract_output = {
+    "phased": snakemake.output.bed_phased,
+    "unphased": snakemake.output.bed_unphased,
+}
 
-true_tracts = pr.from_string(true_tracts).merge(by="Sample")
-if true_tracts.empty:
-    open(snakemake.output.bed, "w").close()
-else:
-    true_tracts.to_csv(snakemake.output.bed, sep="\t", header=False)
+for phased_status in ["phased", "unphased"]:
+    true_tracts = get_true_tracts(
+        ts=ts,
+        tgt_id=snakemake.params.tgt_id,
+        src_id=snakemake.params.src_id,
+        is_phased=phased_status == "phased",
+        ploidy=int(snakemake.params.ploidy),
+    )
+
+    true_tracts = pr.from_string(true_tracts).merge(by="Sample")
+    if true_tracts.empty:
+        open(true_tract_output[phased_status], "w").close()
+    else:
+        true_tracts.to_csv(true_tract_output[phased_status], sep="\t", header=False)

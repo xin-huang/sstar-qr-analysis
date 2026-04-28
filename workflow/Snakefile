@@ -23,6 +23,7 @@ import numpy as np
 
 TRAINING_REP = 1000
 TEST_REP = 10
+PHASE_STATES = ["phased", "unphased"]
 
 np.random.seed(3821)
 rng = np.random.default_rng()
@@ -41,14 +42,16 @@ cutoffs = np.concatenate([np.array([0.001, 0.01]), cutoffs, np.array([0.99, 0.99
 rule all:
     input:
         expand(
-            "results/{qr_model}/rep_{test_rep}/{qr_model}.{feature_set}.q_{quantile}.rep_{test_rep}.perf.tsv",
+            "results/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{feature_set}.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
             qr_model=["quantile", "gradient", "qrf"],
             feature_set=["sstar_snp", "region_snp", "both"],
+            phase_state=PHASE_STATES,
             quantile=cutoffs,
             test_rep=range(TEST_REP),
         ),
         expand(
-            "results/sstar/rep_{test_rep}/sstar.phased.q_{quantile}.rep_{test_rep}.perf.tsv",
+            "results/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
+            phase_state=PHASE_STATES,
             quantile=cutoffs,
             test_rep=range(TEST_REP),
         ),
