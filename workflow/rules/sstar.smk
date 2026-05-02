@@ -29,7 +29,7 @@ rule sstar_score:
         ref_list=rules.simulate_test_data.output.ref_list,
         tgt_list=rules.simulate_test_data.output.tgt_list,
     output:
-        scores="results/simulation/test/rep_{test_rep}/sstar.{phase_state}.rep_{test_rep}.scores.tsv",
+        scores="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/sstar.{phase_state}.rep_{test_rep}.scores.tsv",
     params:
         win_len=50000,
         win_step=50000,
@@ -54,12 +54,15 @@ rule sstar_score:
 
 rule sstar_quantile:
     input:
-        model="config/ArchIE_3D19_wo_introgression.yaml",
+        model="config/{demog_model}_wo_introgression.yaml",
     output:
-        quantile="results/sstar/{phase_state}/rep_{test_rep}/quantile.summary.txt",
+        quantile="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/quantile.summary.txt",
     params:
         ms_dir="resources/msdir",
-        output_dir="results/sstar/{phase_state}/rep_{test_rep}",
+        output_dir="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}",
+        pop_config=get_pop_config,
+        sample_size=get_sample_size,
+        length_bp=LENGTH_BPS["training"],
     resources:
         time=360, mem_gb=128, cpus=32,
     conda:
@@ -70,15 +73,15 @@ rule sstar_quantile:
           --model {input.model} \
           --ms-dir {params.ms_dir} \
           --N0 1000 \
-          --nsamp 200 \
+          --nsamp {params.sample_size[total]} \
           --nreps 10000 \
-          --ref-index 3 \
-          --ref-size 100 \
-          --tgt-index 4 \
-          --tgt-size 100 \
-          --mut-rate 1.2e-8 \
-          --rec-rate 1.0e-8 \
-          --seq-len 50000 \
+          --ref-index {params.pop_config.ref_index} \
+          --ref-size {params.sample_size[ref]} \
+          --tgt-index {params.pop_config.tgt_index} \
+          --tgt-size {params.sample_size[tgt]} \
+          --mut-rate {params.pop_config.mut_rate} \
+          --rec-rate {params.pop_config.rec_rate} \
+          --seq-len {params.length_bp} \
           --snp-num-range 50 350 5 \
           --output-dir {params.output_dir} \
           --thread {resources.cpus} \
@@ -90,9 +93,10 @@ rule sstar_threshold:
         scores=rules.sstar_score.output.scores,
         quantile=rules.sstar_quantile.output.quantile,
     output:
-        preds="results/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.preds.tsv",
+        preds="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.preds.tsv",
     params:
         phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
+        pop_config=get_pop_config,
     conda:
         "../envs/sstar.yaml",
     shell:
@@ -100,7 +104,7 @@ rule sstar_threshold:
         sstar threshold \
           --score {input.scores} \
           --sim-data {input.quantile} \
-          --recomb-rate 1.0e-8 \
+          --recomb-rate {params.pop_config.rec_rate} \
           --quantile {wildcards.quantile} \
           --output {output.preds} \
           --k 8 \
@@ -112,21 +116,19 @@ rule get_sstar_inferred_tracts:
     input:
         preds=rules.sstar_threshold.output.preds,
     output:
-        bed="results/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
-    params:
-        phased=lambda wildcards: wildcards.phase_state == "phased",
+        bed="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
     shell:
         r"""
-        awk 'BEGIN{{FS=OFS="\t"}} NR==1{{next}} $5>$6 {{print $1,$2,$3,$4}}' {input.preds} | awk 'BEGIN{{FS=OFS="\t"}} {{if ("{params.phased}"=="True") gsub(/hap/, "", $4); print}}' > {output.bed}
+        awk 'BEGIN{{FS=OFS="\t"}} NR==1{{next}} $5>$6 {{print $1,$2,$3,$4}}' {input.preds} | awk 'BEGIN{{FS=OFS="\t"}} {{if ("{wildcards.phase_state}"=="phased") gsub(/hap/, "", $4); print}}' > {output.bed}
         """
 
 
 rule evaluate_sstar:
     input:
-        true_tracts="results/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.{phase_state}.bed",
+        true_tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.{phase_state}.bed",
         inferred_tracts=rules.get_sstar_inferred_tracts.output.bed,
     output:
-        tsv="results/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
+        tsv="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
     params:
         length_bp=200_000_000,
         cutoff="{quantile}",

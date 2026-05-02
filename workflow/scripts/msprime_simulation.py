@@ -273,20 +273,20 @@ def get_true_tracts(
 
 
 with open(snakemake.output.seed_file, "w") as o:
-    o.write(f"{snakemake.params.seed}\n")
+    o.write(f"{snakemake.params.sim['seed']}\n")
 
 ts = simulate(
     demog=snakemake.input.demes,
-    nref=int(snakemake.params.n_ref),
-    ntgt=int(snakemake.params.n_tgt),
-    nsrc=int(snakemake.params.n_src),
-    ref_id=snakemake.params.ref_id,
-    tgt_id=snakemake.params.tgt_id,
-    src_id=snakemake.params.src_id,
-    seq_len=int(snakemake.params.length_bp),
-    mut_rate=float(snakemake.params.mu),
-    rec_rate=float(snakemake.params.rho),
-    seed=int(snakemake.params.seed),
+    nref=int(snakemake.wildcards.n_ref),
+    ntgt=int(snakemake.wildcards.n_tgt),
+    nsrc=int(snakemake.wildcards.n_src),
+    ref_id=snakemake.params.sim["ref_id"],
+    tgt_id=snakemake.params.sim["tgt_id"],
+    src_id=snakemake.params.sim["src_id"],
+    seq_len=int(snakemake.params.sim["length_bp"]),
+    mut_rate=float(snakemake.params.sim["mu"]),
+    rec_rate=float(snakemake.params.sim["rho"]),
+    seed=int(snakemake.params.sim["seed"]),
 )
 
 ts.dump(snakemake.output.ts)
@@ -296,9 +296,9 @@ with open(snakemake.output.vcf, "w") as o:
     ts.write_vcf(o, allow_position_zero=True)
 
 create_sample_lists(
-    nref=int(snakemake.params.n_ref),
-    ntgt=int(snakemake.params.n_tgt),
-    nsrc=int(snakemake.params.n_src),
+    nref=int(snakemake.wildcards.n_ref),
+    ntgt=int(snakemake.wildcards.n_tgt),
+    nsrc=int(snakemake.wildcards.n_src),
     ref_list=snakemake.output.ref_list,
     tgt_list=snakemake.output.tgt_list,
     src_list=snakemake.output.src_list,
@@ -312,10 +312,10 @@ true_tract_output = {
 for phased_status in ["phased", "unphased"]:
     true_tracts = get_true_tracts(
         ts=ts,
-        tgt_id=snakemake.params.tgt_id,
-        src_id=snakemake.params.src_id,
+        tgt_id=snakemake.params.sim["tgt_id"],
+        src_id=snakemake.params.sim["src_id"],
         is_phased=phased_status == "phased",
-        ploidy=int(snakemake.params.ploidy),
+        ploidy=int(snakemake.params.sim["ploidy"]),
     )
 
     true_tracts = pr.from_string(true_tracts).merge(by="Sample")
