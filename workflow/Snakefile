@@ -103,27 +103,13 @@ cutoffs = np.concatenate([np.array([0.001, 0.01]), cutoffs, np.array([0.99, 0.99
 rule all:
     input:
         expand(
-            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{feature_set}.pred.perf.tsv",
-            demog_model=DEMOGRAPHIC_MODELS,
-            n_ref=N_REFS,
-            n_tgt=N_TGTS,
-            n_src=N_SRCS,
-            qr_model=["quantile", "gradient", "qrf"],
-            feature_set=["sstar_snp", "region_snp", "both"],
-            phase_state=PHASE_STATES,
-            quantile=cutoffs,
-            test_rep=range(TEST_REP),
-        ),
-        expand(
-            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.pred.perf.tsv",
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/performance/{phase_state}/combined.pred.perf.tsv",
             demog_model=DEMOGRAPHIC_MODELS,
             n_ref=N_REFS,
             n_tgt=N_TGTS,
             n_src=N_SRCS,
             phase_state=PHASE_STATES,
-            quantile=cutoffs,
-            test_rep=range(TEST_REP),
-        ),
+        )
 
 
 include: "rules/common.smk"
