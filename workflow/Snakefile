@@ -27,8 +27,8 @@ TRAINING_REP = 1000
 TEST_REP = 10
 N_REP = 10
 DEMOGRAPHIC_MODELS = [
-    #"ArchIE_3D19",
-    #"HumanNeanderthal_4G21",
+    "ArchIE_3D19",
+    "HumanNeanderthal_4G21",
     "BonoboGhost_4K19",
 ]
 PHASE_STATES = ["phased", "unphased"]
@@ -103,12 +103,10 @@ cutoffs = np.concatenate([np.array([0.001, 0.01]), cutoffs, np.array([0.99, 0.99
 rule all:
     input:
         expand(
-            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/performance/{phase_state}/combined.pred.perf.tsv",
-            demog_model=DEMOGRAPHIC_MODELS,
+            "results/plots/pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.png",
             n_ref=N_REFS,
             n_tgt=N_TGTS,
             n_src=N_SRCS,
-            phase_state=PHASE_STATES,
         )
 
 

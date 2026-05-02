@@ -72,3 +72,18 @@ rule collect_performance_across_replicates:
         cat {input.qr} | grep -v Cutoff >> {output.perf}
         cat {input.sstar} | grep -v Cutoff >> {output.perf}
         """
+
+
+rule plot_pr_curve:
+    input:
+        perf=expand(
+            rules.collect_performance_across_replicates.output.perf,
+            demog_model=DEMOGRAPHIC_MODELS,
+            phase_state=PHASE_STATES,
+            allow_missing=True,
+        ),
+    output:
+        plot="results/plots/pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.png",
+        summary_tsv="results/plots/pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.summary.tsv",
+    script:
+        "../scripts/plot_pr_curve.py"
