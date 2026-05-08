@@ -170,16 +170,23 @@ def evaluate(
     sum_nfalse_positives = sum_ninferred_tracts - sum_ntrue_positives
     sum_nfalse_negatives = sum_ntrue_tracts - sum_ntrue_positives
 
+    if sample_size == 0:
+        per_sample_metrics = [np.nan] * 6
+    else:
+        per_sample_metrics = [
+            sum_ntrue_tracts / sample_size,
+            sum_ninferred_tracts / sample_size,
+            sum_ntrue_positives / sample_size,
+            sum_nfalse_positives / sample_size,
+            sum_ntrue_negatives / sample_size,
+            sum_nfalse_negatives / sample_size,
+        ]
+
     res.loc[len(res.index)] = [
         cutoff,
         total_precision,
         total_recall,
-        sum_ntrue_tracts / sample_size,
-        sum_ninferred_tracts / sample_size,
-        sum_ntrue_positives / sample_size,
-        sum_nfalse_positives / sample_size,
-        sum_ntrue_negatives / sample_size,
-        sum_nfalse_negatives / sample_size,
+        *per_sample_metrics,
     ]
 
     res.fillna("NaN").to_csv(output, sep="\t", index=False)
