@@ -25,7 +25,7 @@ ruleorder: evaluate_sstar > evaluate_qr
 
 rule sstar_score:
     input:
-        vcf=rules.simulate_test_data.output.vcf,
+        vcf=rules.extract_test_biallelic_snps.output.vcf,
         ref_list=rules.simulate_test_data.output.ref_list,
         tgt_list=rules.simulate_test_data.output.tgt_list,
     output:

@@ -84,7 +84,7 @@ rule extract_test_biallelic_snps:
 
 rule calc_training_sstar_score:
     input:
-        vcf=rules.simulate_training_data.output.vcf,
+        vcf=rules.extract_training_biallelic_snps.output.vcf,
         ref_list=rules.simulate_training_data.output.ref_list,
         tgt_list=rules.simulate_training_data.output.tgt_list,
     output:
