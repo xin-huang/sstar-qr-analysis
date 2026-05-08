@@ -82,8 +82,7 @@ POP_CONFIGS = {
     ),
 }
 
-np.random.seed(3821)
-rng = np.random.default_rng()
+rng = np.random.default_rng(3821)
 all_seeds = rng.choice(
     2**31 - 1,
     size=TEST_REP * TRAINING_REP + TEST_REP,
