@@ -33,12 +33,9 @@ DEMOGRAPHIC_MODELS = [
 ]
 PHASE_STATES = ["phased", "unphased"]
 N_REFS = [50]
-N_TGTS = [50]
+N_TGTS = [1]
 N_SRCS = [0]
-LENGTH_BPS = {
-    "training": 50_000,
-    "test": 200_000_000,
-}
+TEST_LENGTH_BP = 200_000_000
 
 
 @dataclass(frozen=True)
@@ -50,6 +47,7 @@ class PopConfig:
     tgt_index: int
     mut_rate: float
     rec_rate: float
+    win_len: int
 
 
 POP_CONFIGS = {
@@ -61,6 +59,7 @@ POP_CONFIGS = {
         tgt_index=4,
         mut_rate=1.25e-8,
         rec_rate=1.0e-8,
+        win_len=50_000,
     ),
     "HumanNeanderthal_4G21": PopConfig(
         ref="YRI",
@@ -70,6 +69,7 @@ POP_CONFIGS = {
         tgt_index=3,
         mut_rate=1.29e-8,
         rec_rate=1e-8,
+        win_len=50_000,
     ),
     "BonoboGhost_4K19": PopConfig(
         ref="Western",
@@ -79,6 +79,7 @@ POP_CONFIGS = {
         tgt_index=5,
         mut_rate=1.2e-8,
         rec_rate=0.7e-8,
+        win_len=40_000,
     ),
 }
 
