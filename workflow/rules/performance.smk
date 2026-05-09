@@ -1,0 +1,89 @@
+# Copyright 2026 Xin Huang and Andrea Koca
+#
+# GNU General Public License v3.0
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, please see
+#
+#    https://www.gnu.org/licenses/gpl-3.0.en.html
+
+
+rule collect_qr_performance_across_cutoffs:
+    input:
+        perf=expand(
+            rules.evaluate_qr.output.tsv,
+            quantile=cutoffs,
+            allow_missing=True,
+        ),
+    output:
+        perf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{feature_set}.pred.perf.tsv"),
+    shell:
+        r"""
+        cat {input.perf} | grep -v Cutoff | awk -v rep={wildcards.test_rep} -v method="{wildcards.qr_model}_{wildcards.feature_set}" -v nref={wildcards.n_ref} -v ntgt={wildcards.n_tgt} '{{print rep"\t"method"\t"nref"\t"ntgt"\t"$0}}' > {output.perf}
+        sed -i '1iReplicate\tMethod\tN_ref\tN_tgt\tCutoff\tPrecision\tRecall\tL_TT_sample\tL_IT_sample\tL_TP_sample\tL_FP_sample\tL_TN_sample\tL_FN_sample' {output.perf}
+        """
+
+
+rule collect_sstar_performance_across_cutoffs:
+    input:
+        perf=expand(
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
+            quantile=cutoffs,
+            allow_missing=True,
+        ),
+    output:
+        perf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.pred.perf.tsv"),
+    shell:
+        r"""
+        cat {input.perf} | grep -v Cutoff | awk -v rep={wildcards.test_rep} -v nref={wildcards.n_ref} -v ntgt={wildcards.n_tgt} '{{print rep"\tsstar\t"nref"\t"ntgt"\t"$0}}' > {output.perf}
+        sed -i '1iReplicate\tMethod\tN_ref\tN_tgt\tCutoff\tPrecision\tRecall\tL_TT_sample\tL_IT_sample\tL_TP_sample\tL_FP_sample\tL_TN_sample\tL_FN_sample' {output.perf}
+        """
+
+
+rule collect_performance_across_replicates:
+    input:
+        qr=expand(
+            rules.collect_qr_performance_across_cutoffs.output.perf,
+            qr_model=["quantile", "gradient", "qrf"],
+            feature_set=["sstar_snp", "region_snp", "both"],
+            test_rep=range(TEST_REP),
+            allow_missing=True,
+        ),
+        sstar=expand(
+            rules.collect_sstar_performance_across_cutoffs.output.perf,
+            test_rep=range(TEST_REP),
+            allow_missing=True,
+        ),
+    output:
+        perf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/performance/{phase_state}/combined.pred.perf.tsv",
+    shell:
+        r"""
+        head -n 1 {input.qr[0]} > {output.perf}
+        cat {input.qr} | grep -v Cutoff >> {output.perf}
+        cat {input.sstar} | grep -v Cutoff >> {output.perf}
+        """
+
+
+rule plot_pr_curve:
+    input:
+        perf=expand(
+            rules.collect_performance_across_replicates.output.perf,
+            demog_model=DEMOGRAPHIC_MODELS,
+            phase_state=PHASE_STATES,
+            allow_missing=True,
+        ),
+    output:
+        plot="results/plots/pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.png",
+        summary_tsv="results/plots/pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.summary.tsv",
+    script:
+        "../scripts/plot_pr_curve.py"

@@ -27,6 +27,23 @@ from sklearn.ensemble import GradientBoostingRegressor
 def get_xy(df: pd.DataFrame, features: list[str]) -> tuple[pd.DataFrame, pd.Series]:
     """
     Extract model features and target.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe containing feature columns and the target column.
+    features : list[str]
+        Names of columns to use as model features.
+
+    Returns
+    -------
+    tuple[pd.DataFrame, pd.Series]
+        A tuple containing:
+
+        - x : pd.DataFrame
+            Feature dataframe.
+        - y : pd.Series
+            Target series from the ``"S*_score"`` column.
     """
     x = df[features].copy()
     y = df["S*_score"].copy()
@@ -36,6 +53,29 @@ def get_xy(df: pd.DataFrame, features: list[str]) -> tuple[pd.DataFrame, pd.Seri
 def get_model(model_type: str, quantile: float):
     """
     Return the selected regression model.
+
+    Parameters
+    ----------
+    model_type : {"quantile", "gradient", "qrf"}
+        Type of regression model to create.
+
+        - ``"quantile"``: linear quantile regression.
+        - ``"gradient"``: gradient boosting quantile regression.
+        - ``"qrf"``: quantile random forest regression.
+
+    quantile : float
+        Target quantile to estimate. Should be between 0 and 1.
+
+    Returns
+    -------
+    object
+        Initialized regression model instance.
+
+    Raises
+    ------
+    ValueError
+        If ``model_type`` is not one of ``"quantile"``, ``"gradient"``,
+        or ``"qrf"``.
     """
     if model_type == "quantile":
 

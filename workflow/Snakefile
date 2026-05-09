@@ -27,8 +27,8 @@ TRAINING_REP = 1000
 TEST_REP = 10
 N_REP = 10
 DEMOGRAPHIC_MODELS = [
-    #"ArchIE_3D19",
-    #"HumanNeanderthal_4G21",
+    "ArchIE_3D19",
+    "HumanNeanderthal_4G21",
     "BonoboGhost_4K19",
 ]
 PHASE_STATES = ["phased", "unphased"]
@@ -103,30 +103,15 @@ cutoffs = np.concatenate([np.array([0.001, 0.01]), cutoffs, np.array([0.99, 0.99
 rule all:
     input:
         expand(
-            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{feature_set}.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
-            demog_model=DEMOGRAPHIC_MODELS,
+            "results/plots/pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.png",
             n_ref=N_REFS,
             n_tgt=N_TGTS,
             n_src=N_SRCS,
-            qr_model=["quantile", "gradient", "qrf"],
-            feature_set=["sstar_snp", "region_snp", "both"],
-            phase_state=PHASE_STATES,
-            quantile=cutoffs,
-            test_rep=range(TEST_REP),
-        ),
-        expand(
-            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
-            demog_model=DEMOGRAPHIC_MODELS,
-            n_ref=N_REFS,
-            n_tgt=N_TGTS,
-            n_src=N_SRCS,
-            phase_state=PHASE_STATES,
-            quantile=cutoffs,
-            test_rep=range(TEST_REP),
-        ),
+        )
 
 
 include: "rules/common.smk"
 include: "rules/simulation.smk"
 include: "rules/sstar.smk"
 include: "rules/qr.smk"
+include: "rules/performance.smk"
