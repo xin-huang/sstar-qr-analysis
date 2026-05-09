@@ -109,26 +109,11 @@ def get_model(model_type: str, quantile: float):
 
 quantile = float(snakemake.wildcards.quantile)
 model_type = snakemake.wildcards.qr_model
-feature_set = snakemake.wildcards.feature_set
-
 
 null_df = pd.read_csv(snakemake.input.training_data, sep="\t")
 score_df = pd.read_csv(snakemake.input.test_data, sep="\t")
 
-feature_sets = {
-    "sstar_snp": ["S*_SNP_number"],
-    "region_snp": ["region_ind_SNP_number"],
-    "both": ["S*_SNP_number", "region_ind_SNP_number"],
-}
-
-
-if feature_set not in feature_sets:
-    raise ValueError(
-        f"Unsupported feature_set: {feature_set}. "
-        f"Choose from: {list(feature_sets.keys())}"
-    )
-
-features = feature_sets[feature_set]
+features = ["region_ind_SNP_number"]
 
 train = null_df.dropna(subset=features + ["S*_score"]).copy()
 pred_df = score_df.dropna(subset=features + ["S*_score"]).copy()

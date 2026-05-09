@@ -26,7 +26,7 @@ def get_simulation_params(wildcards, split):
     pop = get_pop_config(wildcards)
     if split == "training":
         seed = seed_lists[split][int(wildcards.test_rep)][int(wildcards.training_rep)]
-        length_bp = get_pop_config(wildcards).win_len,
+        length_bp = get_pop_config(wildcards).win_len
     else:
         seed = seed_lists[split][int(wildcards.test_rep)]
         length_bp = TEST_LENGTH_BP
