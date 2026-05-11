@@ -18,6 +18,9 @@
 #    https://www.gnu.org/licenses/gpl-3.0.en.html
 
 
+ruleorder: collect_sstar_performance_across_cutoffs > collect_qr_performance_across_cutoffs
+
+
 rule collect_qr_performance_across_cutoffs:
     input:
         perf=expand(
@@ -26,10 +29,10 @@ rule collect_qr_performance_across_cutoffs:
             allow_missing=True,
         ),
     output:
-        perf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{feature_set}.pred.perf.tsv"),
+        perf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.pred.perf.tsv"),
     shell:
         r"""
-        cat {input.perf} | grep -v Cutoff | awk -v rep={wildcards.test_rep} -v method="{wildcards.qr_model}_{wildcards.feature_set}" -v nref={wildcards.n_ref} -v ntgt={wildcards.n_tgt} '{{print rep"\t"method"\t"nref"\t"ntgt"\t"$0}}' > {output.perf}
+        cat {input.perf} | grep -v Cutoff | awk -v rep={wildcards.test_rep} -v method="{wildcards.qr_model}" -v nref={wildcards.n_ref} -v ntgt={wildcards.n_tgt} '{{print rep"\t"method"\t"nref"\t"ntgt"\t"$0}}' > {output.perf}
         sed -i '1iReplicate\tMethod\tN_ref\tN_tgt\tCutoff\tPrecision\tRecall\tL_TT_sample\tL_IT_sample\tL_TP_sample\tL_FP_sample\tL_TN_sample\tL_FN_sample' {output.perf}
         """
 
@@ -55,7 +58,6 @@ rule collect_performance_across_replicates:
         qr=expand(
             rules.collect_qr_performance_across_cutoffs.output.perf,
             qr_model=["quantile", "gradient", "qrf"],
-            feature_set=["sstar_snp", "region_snp", "both"],
             test_rep=range(TEST_REP),
             allow_missing=True,
         ),
