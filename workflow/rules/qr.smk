@@ -20,12 +20,14 @@
 
 rule run_qr:
     input:
-        training_data=rules.merge_training_sstar_score.output.scores,
-        test_data=rules.sstar_score.output.scores,
+        training_data="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/sstar.{phase_state}.rep_{test_rep}.training.scores.tsv",
+        test_data="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/sstar.{phase_state}.rep_{test_rep}.scores.tsv",
     output:
-        preds="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.preds.tsv",
+        pred=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv"),
+    wildcard_constraints:
+        qr_model = "qrf|quantile",
     resources:
-        time=720, mem_gb=16,
+        time=720, mem_mb=16000,
     conda:
         "../envs/qr.yaml"
     script:
@@ -34,9 +36,11 @@ rule run_qr:
 
 rule get_qr_inferred_tracts:
     input:
-        preds=rules.run_qr.output.preds,
+        preds="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv",
     output:
         bed="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
+    wildcard_constraints:
+        qr_model = "qrf|quantile",
     shell:
         r"""
         awk 'BEGIN{{FS=OFS="\t"}} NR==1{{next}} $5>$9 {{print $1,$2,$3,$4}}' {input.preds} | awk 'BEGIN{{FS=OFS="\t"}} {{if ("{wildcards.phase_state}"=="phased") gsub(/hap/, "", $4); print}}' > {output.bed}
@@ -46,9 +50,11 @@ rule get_qr_inferred_tracts:
 rule evaluate_qr:
     input:
         true_tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.{phase_state}.bed",
-        inferred_tracts=rules.get_qr_inferred_tracts.output.bed,
+        inferred_tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
     output:
         tsv="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
+    wildcard_constraints:
+        qr_model = "qrf|quantile",
     params:
         length_bp=200_000_000,
         cutoff="{quantile}",

@@ -18,16 +18,11 @@
 #    https://www.gnu.org/licenses/gpl-3.0.en.html
 
 
-ruleorder: sstar_threshold > run_qr
-ruleorder: get_sstar_inferred_tracts > get_qr_inferred_tracts
-ruleorder: evaluate_sstar > evaluate_qr
-
-
 rule sstar_score:
     input:
-        vcf=rules.extract_test_biallelic_snps.output.vcf,
-        ref_list=rules.simulate_test_data.output.ref_list,
-        tgt_list=rules.simulate_test_data.output.tgt_list,
+        vcf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.biallelic.snps.vcf.gz",
+        ref_list="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.ref.list",
+        tgt_list="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.tgt.list",
     output:
         scores="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/sstar.{phase_state}.rep_{test_rep}.scores.tsv",
     params:
@@ -35,7 +30,7 @@ rule sstar_score:
         win_step=10000,
         phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
     resources:
-        time=360, mem_gb=16, cpus=16,
+        time=360, mem_mb=16000, cpus=16,
     conda:
         "../envs/sstar.yaml",
     shell:
@@ -54,7 +49,7 @@ rule sstar_score:
 
 rule sstar_quantile:
     input:
-        model="config/{demog_model}_wo_introgression.yaml",
+        model="config/demog_models/{demog_model}_wo_introgression.yaml",
     output:
         quantile="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/quantile.summary.txt",
     params:
@@ -63,7 +58,7 @@ rule sstar_quantile:
         pop_config=get_pop_config,
         sample_size=get_sample_size,
     resources:
-        time=360, mem_gb=128, cpus=32,
+        time=360, mem_mb=64000, cpus=32,
     conda:
         "../envs/sstar.yaml",
     shell:
@@ -74,9 +69,9 @@ rule sstar_quantile:
           --N0 1000 \
           --nsamp {params.sample_size[total]} \
           --nreps 10000 \
-          --ref-index {params.pop_config.ref_index} \
+          --ref-pop {params.pop_config.ref} \
           --ref-size {params.sample_size[ref]} \
-          --tgt-index {params.pop_config.tgt_index} \
+          --tgt-pop {params.pop_config.tgt} \
           --tgt-size {params.sample_size[tgt]} \
           --mut-rate {params.pop_config.mut_rate} \
           --rec-rate {params.pop_config.rec_rate} \
@@ -89,12 +84,12 @@ rule sstar_quantile:
 
 rule sstar_threshold:
     input:
-        scores=rules.sstar_score.output.scores,
-        quantile=rules.sstar_quantile.output.quantile,
+        scores="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/sstar.{phase_state}.rep_{test_rep}.scores.tsv",
+        quantile="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/quantile.summary.txt",
     output:
-        preds="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.preds.tsv",
+        pred=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv"),
     params:
-        phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
+       phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
     conda:
         "../envs/sstar.yaml",
     shell:
@@ -103,7 +98,7 @@ rule sstar_threshold:
           --score {input.scores} \
           --sim-data {input.quantile} \
           --quantile {wildcards.quantile} \
-          --output {output.preds} \
+          --output {output.pred} \
           --k 8 \
           {params.phased_flag}
         """
@@ -111,19 +106,19 @@ rule sstar_threshold:
 
 rule get_sstar_inferred_tracts:
     input:
-        preds=rules.sstar_threshold.output.preds,
+        pred="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv",
     output:
         bed="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
     shell:
         r"""
-        awk 'BEGIN{{FS=OFS="\t"}} NR==1{{next}} $5>$6 {{print $1,$2,$3,$4}}' {input.preds} | awk 'BEGIN{{FS=OFS="\t"}} {{if ("{wildcards.phase_state}"=="phased") gsub(/hap/, "", $4); print}}' > {output.bed}
+        awk 'BEGIN{{FS=OFS="\t"}} NR==1{{next}} $5>$6 {{print $1,$2,$3,$4}}' {input.pred} | awk 'BEGIN{{FS=OFS="\t"}} {{if ("{wildcards.phase_state}"=="phased") gsub(/hap/, "", $4); print}}' > {output.bed}
         """
 
 
 rule evaluate_sstar:
     input:
         true_tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.{phase_state}.bed",
-        inferred_tracts=rules.get_sstar_inferred_tracts.output.bed,
+        inferred_tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
     output:
         tsv="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
     params:
