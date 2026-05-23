@@ -21,7 +21,7 @@
 rule render_sstar2_config_template:
     input:
         template="config/sstar2.config.template.yaml",
-        vcf=rules.extract_test_biallelic_snps.vcf,
+        vcf=rules.extract_test_biallelic_snps.output.vcf,
     output:
         config="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.q_{quantile}.rep_{test_rep}.config.yaml",
     params:
