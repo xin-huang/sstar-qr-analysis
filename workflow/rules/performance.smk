@@ -57,7 +57,7 @@ rule collect_performance_across_replicates:
     input:
         qr=expand(
             rules.collect_qr_performance_across_cutoffs.output.perf,
-            qr_model=["quantile", "gradient", "qrf"],
+            qr_model=["quantile", "qrf"],
             test_rep=range(TEST_REP),
             allow_missing=True,
         ),
