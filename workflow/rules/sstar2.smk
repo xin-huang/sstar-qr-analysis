@@ -23,7 +23,7 @@ rule render_sstar2_config_template:
         template="config/sstar2.config.template.yaml",
         vcf=rules.extract_test_biallelic_snps.vcf,
     output:
-        config="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.rep_{test_rep}.config.yaml",
+        config="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.q_{quantile}.rep_{test_rep}.config.yaml",
     params:
         sstar2=get_sstar2_config_params,
     template_engine:
@@ -35,7 +35,7 @@ rule run_sstar2_train:
         demes="config/{demog_model}_wo_introgression.yaml",
         config=rules.render_sstar2_config_template.output.config,
     output:
-        model="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.rep_{test_rep}.onnx",
+        model="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.q_{quantile}.rep_{test_rep}.onnx",
     shell:
         """
         sstar2 train --demes {input.demes} --config {input.config} --output {output.model}
@@ -47,9 +47,9 @@ rule run_sstar2_infer:
         model=rules.run_sstar2_train.output.model,
         config=rules.render_sstar2_config_template.output.config,
     output:
-        feat="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.rep_{test_rep}.processed.features.tsv",
-        pred="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.rep_{test_rep}.pred.tsv",
-        tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.rep_{test_rep}.inferred.tracts.bed",
+        feat="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.q_{quantile}.rep_{test_rep}.processed.features.tsv",
+        pred="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.q_{quantile}.rep_{test_rep}.pred.tsv",
+        tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
     shell:
         """
         sstar2 infer --model {input.model} --config {input.config} --feat-file {output.feat} --pred-file {output.pred} --tract-file {output.tracts}

@@ -49,3 +49,21 @@ def get_sample_size(wildcards):
         "ref": 2*(int(wildcards.n_ref)),
         "tgt": 2*(int(wildcards.n_tgt)),
     }
+
+
+def get_sstar2_config_params(wildcards):
+    pop = get_pop_config(wildcards)
+
+    return {
+        "ref_id": pop.ref,
+        "tgt_id": pop.tgt,
+        "mut_rate": pop.mut_rate,
+        "rec_rate": pop.rec_rate,
+        "win_len": pop.win_len,
+        "nfeature": 1_000_000,
+        "nprocess": 32,
+        "phase_state": wildcards.phase_state == "phased",
+        "seed": int(seed_lists["test"][int(wildcards.test_rep)]),
+        "ref_ind_file": "config/simulation.ref.list",
+        "tgt_ind_file": "config/simulation.tgt.list",
+    }
