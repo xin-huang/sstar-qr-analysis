@@ -31,7 +31,7 @@ DEMOGRAPHIC_MODELS = [
     "BonoboGhost_4K19",
 ]
 PHASE_STATES = ["phased", "unphased"]
-N_REFS = [50]
+N_REFS = [10]
 N_TGTS = [1]
 N_SRCS = [0]
 TEST_LENGTH_BP = 200_000_000

@@ -64,6 +64,6 @@ def get_sstar2_config_params(wildcards):
         "nprocess": 32,
         "phase_state": wildcards.phase_state == "phased",
         "seed": int(seed_lists["test"][int(wildcards.test_rep)]),
-        "ref_ind_file": "config/simulation.ref.list",
-        "tgt_ind_file": "config/simulation.tgt.list",
+        "ref_ind_file": f"config/simulation.nref_{wildcards.n_ref}.ntgt_{wildcards.n_tgt}.ref.list",
+        "tgt_ind_file": f"config/simulation.nref_{wildcards.n_ref}.ntgt_{wildcards.n_tgt}.tgt.list",
     }

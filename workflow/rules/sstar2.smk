@@ -36,6 +36,8 @@ rule run_sstar2_train:
         config=rules.render_sstar2_config_template.output.config,
     output:
         model="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.q_{quantile}.rep_{test_rep}.onnx",
+    conda:
+        "../envs/sstar2.yaml",
     shell:
         """
         sstar2 train --demes {input.demes} --config {input.config} --output {output.model}
@@ -50,6 +52,8 @@ rule run_sstar2_infer:
         feat="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.q_{quantile}.rep_{test_rep}.processed.features.tsv",
         pred="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.q_{quantile}.rep_{test_rep}.pred.tsv",
         tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
+    conda:
+        "../envs/sstar2.yaml",
     shell:
         """
         sstar2 infer --model {input.model} --config {input.config} --feat-file {output.feat} --pred-file {output.pred} --tract-file {output.tracts}
