@@ -1,5 +1,5 @@
 simulation:
-  nrep: 100
+  nrep: 10000
   nref: ?wildcards.n_ref
   ntgt: ?wildcards.n_tgt
   ref_id: ?params.sstar2["ref_id"]

@@ -102,14 +102,14 @@ cutoffs = np.concatenate([np.array([0.001, 0.01]), cutoffs, np.array([0.99, 0.99
 rule all:
     input:
         expand(
-            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.q_{quantile}.rep_{test_rep}.config.yaml",
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.pred.tsv",
             demog_model=DEMOGRAPHIC_MODELS,
             n_ref=N_REFS,
             n_tgt=N_TGTS,
             n_src=N_SRCS,
             phase_state=PHASE_STATES,
             test_rep=list(range(TEST_REP)),
-            quantile=cutoffs,
+            quantile=[0.99],
         )
         #expand(
         #    "results/plots/pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.png",
