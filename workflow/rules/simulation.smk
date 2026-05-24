@@ -33,7 +33,7 @@ rule simulate_training_data:
     params:
         sim=lambda wildcards: get_simulation_params(wildcards, "training"),
     resources:
-        mem_gb=16,
+        mem_mb=16000,
     script:
         "../scripts/msprime_simulation.py"
 
@@ -53,7 +53,7 @@ rule simulate_test_data:
     params:
         sim=lambda wildcards: get_simulation_params(wildcards, "test"),
     resources:
-        time=360, mem_gb=16,
+        time=360, mem_mb=16000,
     script:
         "../scripts/msprime_simulation.py"
 
@@ -94,7 +94,7 @@ rule calc_training_sstar_score:
         win_step=50000,
         phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
     resources:
-        mem_gb=16, cpus=4,
+        mem_mb=16000, cpus=4,
     conda:
         "../envs/sstar.yaml",
     shell:
