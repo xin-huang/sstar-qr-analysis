@@ -20,7 +20,7 @@
 
 rule simulate_training_data:
     input:
-        demes="config/{demog_model}_wo_introgression.yaml",
+        demes="config/demog_models/{demog_model}_wo_introgression.yaml",
     output:
         ts=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.ts"),
         vcf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.vcf"),
@@ -40,7 +40,7 @@ rule simulate_training_data:
 
 rule simulate_test_data:
     input:
-        demes="config/{demog_model}.yaml",
+        demes="config/demog_models/{demog_model}.yaml",
     output:
         ts=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.ts"),
         vcf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.vcf"),
@@ -63,6 +63,7 @@ rule extract_training_biallelic_snps:
         vcf=rules.simulate_training_data.output.vcf,
     output:
         vcf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.biallelic.snps.vcf.gz"),
+        idx=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.biallelic.snps.vcf.gz.tbi"),
     shell:
         """
         bcftools view {input.vcf} -v snps -m 2 -M 2 -g ^miss | bgzip -c > {output.vcf}
@@ -75,6 +76,7 @@ rule extract_test_biallelic_snps:
         vcf=rules.simulate_test_data.output.vcf,
     output:
         vcf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.biallelic.snps.vcf.gz",
+        idx="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.biallelic.snps.vcf.gz.tbi",
     shell:
         """
         bcftools view {input.vcf} -v snps -m 2 -M 2 -g ^miss | bgzip -c > {output.vcf}
