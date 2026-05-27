@@ -1,7 +1,7 @@
 simulation:
   nrep: 10000
-  nref: ?wildcards.n_ref
-  ntgt: ?wildcards.n_tgt
+  nref: ?int(wildcards.n_ref)
+  ntgt: ?int(wildcards.n_tgt)
   ref_id: ?params.sstar2["ref_id"]
   tgt_id: ?params.sstar2["tgt_id"]
   seq_len: ?params.sstar2["win_len"]
@@ -28,7 +28,7 @@ preprocessing:
 model:
   params:
     loss: "quantile"
-    quantile: ?wildcards.quantile
+    alpha: ?float(wildcards.quantile)
     n_estimators: 200
     max_depth: 3
     random_state: ?params.sstar2["seed"]
