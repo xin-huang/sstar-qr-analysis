@@ -113,16 +113,16 @@ rule all:
             qr_model=["quantile", "qrf"],
             quantile=cutoffs,
         ),
-        #expand(
-        #    "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.pred.tsv",
-        #    demog_model=DEMOGRAPHIC_MODELS,
-        #    n_ref=N_REFS,
-        #    n_tgt=N_TGTS,
-        #    n_src=N_SRCS,
-        #    phase_state=PHASE_STATES,
-        #    test_rep=list(range(TEST_REP)),
-        #    quantile=cutoffs,
-        #),
+        expand(
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
+            demog_model=config["demog_model"],
+            n_ref=N_REFS,
+            n_tgt=N_TGTS,
+            n_src=N_SRCS,
+            phase_state=PHASE_STATES,
+            test_rep=list(range(TEST_REP)),
+            quantile=cutoffs,
+        ),
         #expand(
         #    "results/plots/pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.png",
         #    n_ref=N_REFS,
@@ -134,6 +134,6 @@ rule all:
 include: "rules/common.smk"
 include: "rules/simulation.smk"
 include: "rules/sstar.smk"
-#include: "rules/sstar2.smk"
+include: "rules/sstar2.smk"
 include: "rules/qr.smk"
 #include: "rules/performance.smk"

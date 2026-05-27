@@ -9,7 +9,7 @@ simulation:
   rec_rate: ?params.sstar2["rec_rate"]
   ploidy: 2
   is_phased: ?params.sstar2["phase_state"]
-  nfeature: ?params.sstar2["nfeature"]
+  nfeature: 100_000
   is_shuffled: False
   nprocess: ?params.sstar2["nprocess"]
   seed: ?params.sstar2["seed"]

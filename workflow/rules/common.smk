@@ -60,10 +60,9 @@ def get_sstar2_config_params(wildcards):
         "mut_rate": pop.mut_rate,
         "rec_rate": pop.rec_rate,
         "win_len": pop.win_len,
-        "nfeature": 1_000_000,
         "nprocess": 32,
         "phase_state": wildcards.phase_state == "phased",
         "seed": int(seed_lists["test"][int(wildcards.test_rep)]),
-        "ref_ind_file": f"config/simulation.nref_{wildcards.n_ref}.ntgt_{wildcards.n_tgt}.ref.list",
-        "tgt_ind_file": f"config/simulation.nref_{wildcards.n_ref}.ntgt_{wildcards.n_tgt}.tgt.list",
+        "ref_ind_file": f"config/samples/simulation.nref_{wildcards.n_ref}.ntgt_{wildcards.n_tgt}.ref.list",
+        "tgt_ind_file": f"config/samples/simulation.nref_{wildcards.n_ref}.ntgt_{wildcards.n_tgt}.tgt.list",
     }

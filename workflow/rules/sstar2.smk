@@ -32,7 +32,7 @@ rule render_sstar2_config_template:
 
 rule run_sstar2_train:
     input:
-        demes="config/{demog_model}_wo_introgression.yaml",
+        demes="config/demog_models/{demog_model}_wo_introgression.yaml",
         config=rules.render_sstar2_config_template.output.config,
     output:
         model="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.onnx",
@@ -51,8 +51,8 @@ rule run_sstar2_infer:
         model=rules.run_sstar2_train.output.model,
         config=rules.render_sstar2_config_template.output.config,
     output:
-        feat="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.processed.features.tsv",
-        pred="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.pred.tsv",
+        feat=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.processed.features.tsv"),
+        pred=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.pred.tsv"),
         tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
     resources:
         mem_mb=64000, cpus=32,
