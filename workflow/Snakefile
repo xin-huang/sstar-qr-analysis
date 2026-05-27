@@ -27,8 +27,8 @@ TRAINING_REP = 1000
 TEST_REP = 10
 DEMOGRAPHIC_MODELS = [
     "ArchIE_3D19",
-    #"HumanNeanderthal_4G21",
-    #"BonoboGhost_4K19",
+    "HumanNeanderthal_4G21",
+    "BonoboGhost_4K19",
 ]
 PHASE_STATES = ["phased", "unphased"]
 N_REFS = [50]
@@ -103,7 +103,8 @@ rule all:
     input:
         expand(
             "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
-            demog_model=DEMOGRAPHIC_MODELS,
+            #demog_model=DEMOGRAPHIC_MODELS,
+            demog_model=config["demog_model"],
             n_ref=N_REFS,
             n_tgt=N_TGTS,
             n_src=N_SRCS,

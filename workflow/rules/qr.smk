@@ -23,7 +23,7 @@ rule run_qr:
         training_data=rules.merge_training_sstar_score.output.scores,
         test_data=rules.sstar_score.output.scores,
     output:
-        preds="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.preds.tsv",
+        pred=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv"),
     resources:
         time=720, mem_mb=16000,
     conda:
@@ -34,7 +34,7 @@ rule run_qr:
 
 rule get_qr_inferred_tracts:
     input:
-        preds=rules.run_qr.output.preds,
+        preds=rules.run_qr.output.pred,
     output:
         bed="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
     shell:
