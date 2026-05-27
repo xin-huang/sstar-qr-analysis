@@ -25,7 +25,7 @@ rule run_qr:
     output:
         preds="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.preds.tsv",
     resources:
-        time=720, mem_gb=16,
+        time=720, mem_mb=16000,
     conda:
         "../envs/qr.yaml"
     script:
