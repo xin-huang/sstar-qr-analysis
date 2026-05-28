@@ -18,35 +18,35 @@
 #    https://www.gnu.org/licenses/gpl-3.0.en.html
 
 
-rule run_qr:
-    input:
-        training_data=rules.merge_training_sstar_score.output.scores,
-        test_data=rules.sstar_score.output.scores,
-    output:
-        pred=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv"),
-    resources:
-        time=720, mem_mb=16000,
-    conda:
-        "../envs/qr.yaml"
-    script:
-        "../scripts/qr.py"
+#rule run_qr:
+#    input:
+#        training_data=rules.merge_training_sstar_score.output.scores,
+#        test_data=rules.sstar_score.output.scores,
+#    output:
+#        pred=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv"),
+#    resources:
+#        time=720, mem_mb=16000,
+#    conda:
+#        "../envs/qr.yaml"
+#    script:
+#        "../scripts/qr.py"
 
 
-rule get_qr_inferred_tracts:
-    input:
-        preds=rules.run_qr.output.pred,
-    output:
-        bed="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
-    shell:
-        r"""
-        awk 'BEGIN{{FS=OFS="\t"}} NR==1{{next}} $5>$9 {{print $1,$2,$3,$4}}' {input.preds} | awk 'BEGIN{{FS=OFS="\t"}} {{if ("{wildcards.phase_state}"=="phased") gsub(/hap/, "", $4); print}}' > {output.bed}
-        """
+#rule get_qr_inferred_tracts:
+#    input:
+#        preds=rules.run_qr.output.pred,
+#    output:
+#        bed="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
+#    shell:
+#        r"""
+#        awk 'BEGIN{{FS=OFS="\t"}} NR==1{{next}} $5>$9 {{print $1,$2,$3,$4}}' {input.preds} | awk 'BEGIN{{FS=OFS="\t"}} {{if ("{wildcards.phase_state}"=="phased") gsub(/hap/, "", $4); print}}' > {output.bed}
+#        """
 
 
 rule evaluate_qr:
     input:
         true_tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.{phase_state}.bed",
-        inferred_tracts=rules.get_qr_inferred_tracts.output.bed,
+        inferred_tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
     output:
         tsv="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
     params:
