@@ -33,7 +33,7 @@ rule collect_qr_performance_across_cutoffs:
     shell:
         r"""
         cat {input.perf} | grep -v Cutoff | awk -v rep={wildcards.test_rep} -v method="{wildcards.qr_model}" -v nref={wildcards.n_ref} -v ntgt={wildcards.n_tgt} '{{print rep"\t"method"\t"nref"\t"ntgt"\t"$0}}' > {output.perf}
-        sed -i '1iReplicate\tMethod\tN_ref\tN_tgt\tCutoff\tPrecision\tRecall\tL_TT_sample\tL_IT_sample\tL_TP_sample\tL_FP_sample\tL_TN_sample\tL_FN_sample' {output.perf}
+        sed -i '1iReplicate\tMethod\tN_ref\tN_tgt\tCutoff\tPrecision\tRecall' {output.perf}
         """
 
 
@@ -49,7 +49,7 @@ rule collect_sstar_performance_across_cutoffs:
     shell:
         r"""
         cat {input.perf} | grep -v Cutoff | awk -v rep={wildcards.test_rep} -v version={wildcards.version} -v nref={wildcards.n_ref} -v ntgt={wildcards.n_tgt} '{{print rep"\t"version"\t"nref"\t"ntgt"\t"$0}}' > {output.perf}
-        sed -i '1iReplicate\tMethod\tN_ref\tN_tgt\tCutoff\tPrecision\tRecall\tL_TT_sample\tL_IT_sample\tL_TP_sample\tL_FP_sample\tL_TN_sample\tL_FN_sample' {output.perf}
+        sed -i '1iReplicate\tMethod\tN_ref\tN_tgt\tCutoff\tPrecision\tRecall' {output.perf}
         """
 
 
