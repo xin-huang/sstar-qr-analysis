@@ -1,23 +1,3 @@
-# Copyright 2025 Xin Huang
-#
-# GNU General Public License v3.0
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, please see
-#
-#    https://www.gnu.org/licenses/gpl-3.0.en.html
-
-
 import numpy as np
 import pandas as pd
 import pyranges as pr
@@ -86,6 +66,7 @@ def evaluate(
             sep="\t",
             header=None,
             names=["Chromosome", "Start", "End", "Sample"],
+            dtype={"Chromosome": str, "Start": int, "End": int, "Sample": str},
         )
     except pd.errors.EmptyDataError:
         true_tracts_samples = []
@@ -99,6 +80,7 @@ def evaluate(
             sep="\t",
             header=None,
             names=["Chromosome", "Start", "End", "Sample"],
+            dtype={"Chromosome": str, "Start": int, "End": int, "Sample": str},
         )
     except pd.errors.EmptyDataError:
         inferred_tracts_samples = []
@@ -111,24 +93,15 @@ def evaluate(
             "Cutoff",
             "Precision",
             "Recall",
-            "L_TT_sample", # Length of true tracts per sample
-            "L_IT_sample", # Length of inferred tracts per sample
-            "L_TP_sample", # Length of true positives per sample
-            "L_FP_sample", # Length of false positives per sample
-            "L_TN_sample", # Length of true negatives per sample
-            "L_FN_sample", # Length of false negatives per sample
         ]
     )
 
-    sum_ntrue_tracts = 0
-    sum_ninferred_tracts = 0
-    sum_ntrue_positives = 0
+    precisions = []
+    recalls = []
 
     overlap = np.intersect1d(true_tracts_samples, inferred_tracts_samples)
     true_tracts_only = np.setdiff1d(true_tracts_samples, inferred_tracts_samples)
     inferred_tracts_only = np.setdiff1d(inferred_tracts_samples, true_tracts_samples)
-
-    sample_size = len(overlap) + len(true_tracts_only) + len(inferred_tracts_only)
 
     # Samples exist in both true_tracts and inferred_tracts
     for s in overlap:
@@ -142,51 +115,41 @@ def evaluate(
             (ind_overlaps.End - ind_overlaps.Start).sum() if len(ind_overlaps) > 0 else 0
         )
 
-        sum_ntrue_tracts += ntrue_tracts
-        sum_ninferred_tracts += ninferred_tracts
-        sum_ntrue_positives += ntrue_positives
+        precision, recall = calc_pr(ntrue_tracts, ninferred_tracts, ntrue_positives)
+        precisions.append(precision)
+        recalls.append(recall)
 
     # Samples only exist in true_tracts
     for s in true_tracts_only:
-        # ninferred_tracts = 0
         ind_true_tracts = true_tracts[true_tracts.Sample == s]
 
+        ninferred_tracts = 0
+        ntrue_positives = 0
         ntrue_tracts = (ind_true_tracts.End - ind_true_tracts.Start).sum()
-        sum_ntrue_tracts += ntrue_tracts
+
+        precision, recall = calc_pr(ntrue_tracts, ninferred_tracts, ntrue_positives)
+        precisions.append(precision)
+        recalls.append(recall)
 
     # Samples only exist in inferred_tracts
     for s in inferred_tracts_only:
-        # ntrue_tracts = 0
         ind_inferred_tracts = inferred_tracts[inferred_tracts.Sample == s]
 
+        ntrue_tracts = 0
+        ntrue_positives = 0
         ninferred_tracts = (ind_inferred_tracts.End - ind_inferred_tracts.Start).sum()
-        sum_ninferred_tracts += ninferred_tracts
 
-    total_precision, total_recall = calc_pr(
-        sum_ntrue_tracts, sum_ninferred_tracts, sum_ntrue_positives
-    )
+        precision, recall = calc_pr(ntrue_tracts, ninferred_tracts, ntrue_positives)
+        precisions.append(precision)
+        recalls.append(recall)
 
-    sum_ntrue_negatives = seq_len * sample_size - sum_ntrue_tracts
-    sum_nfalse_positives = sum_ninferred_tracts - sum_ntrue_positives
-    sum_nfalse_negatives = sum_ntrue_tracts - sum_ntrue_positives
-
-    if sample_size == 0:
-        per_sample_metrics = [np.nan] * 6
-    else:
-        per_sample_metrics = [
-            sum_ntrue_tracts / sample_size,
-            sum_ninferred_tracts / sample_size,
-            sum_ntrue_positives / sample_size,
-            sum_nfalse_positives / sample_size,
-            sum_ntrue_negatives / sample_size,
-            sum_nfalse_negatives / sample_size,
-        ]
+    avg_precision = np.nanmean(precisions)
+    avg_recall = np.nanmean(recalls)
 
     res.loc[len(res.index)] = [
         cutoff,
-        total_precision,
-        total_recall,
-        *per_sample_metrics,
+        avg_precision,
+        avg_recall,
     ]
 
     res.fillna("NaN").to_csv(output, sep="\t", index=False)

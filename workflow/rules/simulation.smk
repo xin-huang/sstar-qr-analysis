@@ -20,7 +20,7 @@
 
 rule simulate_training_data:
     input:
-        demes="config/{demog_model}_wo_introgression.yaml",
+        demes="config/demog_models/{demog_model}_wo_introgression.yaml",
     output:
         ts=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.ts"),
         vcf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.vcf"),
@@ -33,36 +33,37 @@ rule simulate_training_data:
     params:
         sim=lambda wildcards: get_simulation_params(wildcards, "training"),
     resources:
-        mem_gb=16,
+        mem_mb=16000,
     script:
         "../scripts/msprime_simulation.py"
 
 
 rule simulate_test_data:
     input:
-        demes="config/{demog_model}.yaml",
+        demes="config/demog_models/{demog_model}.yaml",
     output:
         ts=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.ts"),
         vcf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.vcf"),
-        bed_phased=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.phased.bed"),
-        bed_unphased=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.unphased.bed"),
         ref_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.ref.list"),
         tgt_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.tgt.list"),
         src_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.src.list"),
         seed_file=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.seedmsprime"),
+        bed_phased="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.phased.bed",
+        bed_unphased="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.unphased.bed",
     params:
         sim=lambda wildcards: get_simulation_params(wildcards, "test"),
     resources:
-        time=360, mem_gb=16,
+        time=360, mem_mb=16000,
     script:
         "../scripts/msprime_simulation.py"
 
 
 rule extract_training_biallelic_snps:
     input:
-        vcf=rules.simulate_training_data.output.vcf,
+        vcf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.vcf",
     output:
         vcf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.biallelic.snps.vcf.gz"),
+        idx=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.biallelic.snps.vcf.gz.tbi"),
     shell:
         """
         bcftools view {input.vcf} -v snps -m 2 -M 2 -g ^miss | bgzip -c > {output.vcf}
@@ -72,9 +73,10 @@ rule extract_training_biallelic_snps:
 
 rule extract_test_biallelic_snps:
     input:
-        vcf=rules.simulate_test_data.output.vcf,
+        vcf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.vcf",
     output:
-        vcf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.biallelic.snps.vcf.gz"),
+        vcf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.biallelic.snps.vcf.gz",
+        idx="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.biallelic.snps.vcf.gz.tbi",
     shell:
         """
         bcftools view {input.vcf} -v snps -m 2 -M 2 -g ^miss | bgzip -c > {output.vcf}
@@ -84,17 +86,19 @@ rule extract_test_biallelic_snps:
 
 rule calc_training_sstar_score:
     input:
-        vcf=rules.extract_training_biallelic_snps.output.vcf,
-        ref_list=rules.simulate_training_data.output.ref_list,
-        tgt_list=rules.simulate_training_data.output.tgt_list,
+        vcf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.biallelic.snps.vcf.gz",
+        ref_list="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.ref.list",
+        tgt_list="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.tgt.list",
     output:
         score=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/sstar.{phase_state}.rep_{training_rep}.scores.tsv"),
     params:
         win_len=50000,
         win_step=50000,
         phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
+    wildcard_constraints:
+        training_rep = r"\d+",
     resources:
-        mem_gb=16, cpus=4,
+        mem_mb=16000, cpus=4,
     conda:
         "../envs/sstar.yaml",
     shell:
