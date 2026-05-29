@@ -25,9 +25,9 @@ ruleorder: evaluate_sstar > evaluate_qr
 
 #rule sstar_score:
 #    input:
-#        vcf=rules.extract_test_biallelic_snps.output.vcf,
-#        ref_list=rules.simulate_test_data.output.ref_list,
-#        tgt_list=rules.simulate_test_data.output.tgt_list,
+#        vcf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.biallelic.snps.vcf.gz",
+#        ref_list="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.ref.list",
+#        tgt_list="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.tgt.list",
 #    output:
 #        scores="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/sstar.{phase_state}.rep_{test_rep}.scores.tsv",
 #    params:
@@ -89,8 +89,8 @@ ruleorder: evaluate_sstar > evaluate_qr
 
 #rule sstar_threshold:
 #    input:
-#        scores=rules.sstar_score.output.scores,
-#        quantile=rules.sstar_quantile.output.quantile,
+#        scores="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/sstar.{phase_state}.rep_{test_rep}.scores.tsv",
+#        quantile="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/quantile.summary.txt",
 #    output:
 #        pred=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv"),
 #    params:
@@ -111,7 +111,7 @@ ruleorder: evaluate_sstar > evaluate_qr
 
 #rule get_sstar_inferred_tracts:
 #    input:
-#        pred=rules.sstar_threshold.output.pred,
+#        pred="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv",
 #    output:
 #        bed="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
 #    shell:

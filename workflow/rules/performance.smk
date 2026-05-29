@@ -56,13 +56,13 @@ rule collect_sstar_performance_across_cutoffs:
 rule collect_performance_across_replicates:
     input:
         qr=expand(
-            rules.collect_qr_performance_across_cutoffs.output.perf,
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.pred.perf.tsv",
             qr_model=["quantile", "qrf"],
             test_rep=range(TEST_REP),
             allow_missing=True,
         ),
         sstar=expand(
-            rules.collect_sstar_performance_across_cutoffs.output.perf,
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{version}/{phase_state}/rep_{test_rep}/{version}.pred.perf.tsv",
             version=["quantile", "qrf", "sstar", "sstar2"],
             test_rep=range(TEST_REP),
             allow_missing=True,
@@ -80,7 +80,7 @@ rule collect_performance_across_replicates:
 rule plot_pr_curve:
     input:
         perf=expand(
-            rules.collect_performance_across_replicates.output.perf,
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/performance/{phase_state}/combined.pred.perf.tsv",
             demog_model=DEMOGRAPHIC_MODELS,
             phase_state=PHASE_STATES,
             allow_missing=True,

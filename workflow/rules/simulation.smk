@@ -60,7 +60,7 @@ rule simulate_test_data:
 
 rule extract_training_biallelic_snps:
     input:
-        vcf=rules.simulate_training_data.output.vcf,
+        vcf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.vcf",
     output:
         vcf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.biallelic.snps.vcf.gz"),
         idx=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.biallelic.snps.vcf.gz.tbi"),
@@ -73,7 +73,7 @@ rule extract_training_biallelic_snps:
 
 rule extract_test_biallelic_snps:
     input:
-        vcf=rules.simulate_test_data.output.vcf,
+        vcf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.vcf",
     output:
         vcf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.biallelic.snps.vcf.gz",
         idx="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.biallelic.snps.vcf.gz.tbi",
@@ -86,9 +86,9 @@ rule extract_test_biallelic_snps:
 
 rule calc_training_sstar_score:
     input:
-        vcf=rules.extract_training_biallelic_snps.output.vcf,
-        ref_list=rules.simulate_training_data.output.ref_list,
-        tgt_list=rules.simulate_training_data.output.tgt_list,
+        vcf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.biallelic.snps.vcf.gz",
+        ref_list="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.ref.list",
+        tgt_list="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.tgt.list",
     output:
         score=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/sstar.{phase_state}.rep_{training_rep}.scores.tsv"),
     params:

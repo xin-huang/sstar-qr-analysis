@@ -20,8 +20,8 @@
 
 #rule run_qr:
 #    input:
-#        training_data=rules.merge_training_sstar_score.output.scores,
-#        test_data=rules.sstar_score.output.scores,
+#        training_data="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/sstar.{phase_state}.rep_{test_rep}.training.scores.tsv",
+#        test_data="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/sstar.{phase_state}.rep_{test_rep}.scores.tsv",
 #    output:
 #        pred=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv"),
 #    resources:
@@ -34,7 +34,7 @@
 
 #rule get_qr_inferred_tracts:
 #    input:
-#        preds=rules.run_qr.output.pred,
+#        preds="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv",
 #    output:
 #        bed="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
 #    shell:

@@ -21,7 +21,7 @@
 #rule render_sstar2_config_template:
 #    input:
 #        template="config/sstar2.config.template.yaml",
-#        vcf=rules.extract_test_biallelic_snps.output.vcf,
+#        vcf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.biallelic.snps.vcf.gz",
 #    output:
 #        config="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.config.yaml",
 #    params:
@@ -33,7 +33,7 @@
 #rule run_sstar2_train:
 #    input:
 #        demes="config/demog_models/{demog_model}_wo_introgression.yaml",
-#        config=rules.render_sstar2_config_template.output.config,
+#        config="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.config.yaml",
 #    output:
 #        model="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.onnx",
 #    resources:
@@ -48,8 +48,8 @@
 
 #rule run_sstar2_infer:
 #    input:
-#        model=rules.run_sstar2_train.output.model,
-#        config=rules.render_sstar2_config_template.output.config,
+#        model="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.onnx",
+#        config="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.config.yaml",
 #    output:
 #        feat=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.processed.features.tsv"),
 #        pred=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.pred.tsv"),
