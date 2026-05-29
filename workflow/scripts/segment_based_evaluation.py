@@ -1,76 +1,40 @@
-# Copyright 2025 Xin Huang
-#
-# GNU General Public License v3.0
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, please see
-#
-#    https://www.gnu.org/licenses/gpl-3.0.en.html
-
-
 import numpy as np
 import pandas as pd
 import pyranges as pr
 
 
 def calc_pr(
-    nintro_tracts: int,
-    ninferred_tracts: int,
-    ntrue_positives: int,
+    ntrue_tracts: int, ninferred_tracts: int, ntrue_positives: int
 ) -> tuple[float, float]:
+    """
+    Calculate segment-based precision and recall.
 
-    if ninferred_tracts == 0:
+    Parameters
+    ----------
+    ntrue_tracts : int
+        Length of true introgressed fragments.
+    ninferred_tracts : int
+        Length of inferred introgressed fragments.
+    ntrue_positives : int
+        Length of fragments belonging to true positives.
+
+    Returns
+    -------
+    precision : float
+        Estimated precision.
+    recall : float
+        Estimated recall.
+    """
+    if float(ninferred_tracts) == 0:
         precision = np.nan
     else:
         precision = ntrue_positives / float(ninferred_tracts)
-
-    if nintro_tracts == 0:
+    if float(ntrue_tracts) == 0:
         recall = np.nan
     else:
-        recall = ntrue_positives / float(nintro_tracts)
+        recall = ntrue_positives / float(ntrue_tracts)
 
     return precision, recall
-
-
-def tract_length(tracts) -> int:
-    if tracts is None or len(tracts) == 0:
-        return 0
-
-    return int((tracts.End - tracts.Start).sum())
-
-
-def read_tracts(path: str):
-    try:
-        tracts = pd.read_csv(
-            path,
-            sep="\t",
-            header=None,
-            names=["Chromosome", "Start", "End", "Sample"],
-            dtype={"Chromosome": str, "Sample": str},
-        )
-    except pd.errors.EmptyDataError:
-        return None, np.array([])
-
-    if tracts.empty:
-        return None, np.array([])
-
-    tracts["Start"] = tracts["Start"].astype(int)
-    tracts["End"] = tracts["End"].astype(int)
-
-    samples = tracts["Sample"].unique()
-    tracts = pr.PyRanges(tracts).merge(by="Sample")
-
-    return tracts, samples
 
 
 def evaluate(
@@ -80,103 +44,113 @@ def evaluate(
     cutoff: float,
     output: str,
 ) -> None:
+    """
+    Evaluate model performance using segment-based precision and recall.
 
-    intro_tracts, intro_tracts_samples = read_tracts(true_tract_file)
-    inferred_tracts, inferred_tracts_samples = read_tracts(inferred_tract_file)
-
-    all_samples = np.union1d(intro_tracts_samples, inferred_tracts_samples)
-    sample_size = len(all_samples)
-
-    sum_nintro_tracts = 0
-    sum_ninferred_tracts = 0
-    sum_ntrue_positives = 0
-    sum_nfalse_positives = 0
-    sum_ntrue_negatives = 0
-    sum_nfalse_negatives = 0
-
-    for s in all_samples:
-        if intro_tracts is None:
-            ind_intro_tracts = None
-        else:
-            ind_intro_tracts = intro_tracts[intro_tracts.Sample == s]
-
-        if inferred_tracts is None:
-            ind_inferred_tracts = None
-        else:
-            ind_inferred_tracts = inferred_tracts[inferred_tracts.Sample == s]
-
-        nintro_tracts = tract_length(ind_intro_tracts)
-        ninferred_tracts = tract_length(ind_inferred_tracts)
-
-        if (
-            ind_intro_tracts is None
-            or ind_inferred_tracts is None
-            or len(ind_intro_tracts) == 0
-            or len(ind_inferred_tracts) == 0
-        ):
-            ntrue_positives = 0
-        else:
-            ind_overlaps = ind_intro_tracts.intersect(ind_inferred_tracts)
-            ntrue_positives = tract_length(ind_overlaps)
-
-        nfalse_positives = ninferred_tracts - ntrue_positives
-        nfalse_negatives = nintro_tracts - ntrue_positives
-
-        # true nonintro = FP + TN
-        # TN = true nonintro - FP
-        #    = seq_len - nintro_tracts - nfalse_positives
-        #    = seq_len - nintro_tracts - ninferred_tracts + ntrue_positives
-        ntrue_negatives = (
-            seq_len
-            - nintro_tracts
-            - ninferred_tracts
-            + ntrue_positives
+    Parameters
+    ----------
+    true_tract_file : str
+        Path to the file containing true introgressed fragments.
+    inferred_tract_file : str
+        Path to the file containing inferred introgressed fragments.
+    seq_len : int
+        Total length of the sequence.
+    cutoff : float
+        Probability threshold used to classify a fragment as introgressed.
+    output : str
+        Path to the output file where stores model performance metrics.
+    """
+    try:
+        true_tracts = pd.read_csv(
+            true_tract_file,
+            sep="\t",
+            header=None,
+            names=["Chromosome", "Start", "End", "Sample"],
+            dtype={"Chromosome": str, "Start": int, "End": int, "Sample": str},
         )
-
-        sum_nintro_tracts += nintro_tracts
-        sum_ninferred_tracts += ninferred_tracts
-        sum_ntrue_positives += ntrue_positives
-        sum_nfalse_positives += nfalse_positives
-        sum_nfalse_negatives += nfalse_negatives
-        sum_ntrue_negatives += ntrue_negatives
-
-    total_precision, total_recall = calc_pr(
-        sum_nintro_tracts,
-        sum_ninferred_tracts,
-        sum_ntrue_positives,
-    )
-
-    if sample_size == 0:
-        per_sample_metrics = [np.nan] * 6
+    except pd.errors.EmptyDataError:
+        true_tracts_samples = []
     else:
-        per_sample_metrics = [
-            sum_nintro_tracts / sample_size,
-            sum_ninferred_tracts / sample_size,
-            sum_ntrue_positives / sample_size,
-            sum_nfalse_positives / sample_size,
-            sum_ntrue_negatives / sample_size,
-            sum_nfalse_negatives / sample_size,
-        ]
+        true_tracts_samples = true_tracts["Sample"].unique()
+        true_tracts = pr.PyRanges(true_tracts).merge(by="Sample")
+
+    try:
+        inferred_tracts = pd.read_csv(
+            inferred_tract_file,
+            sep="\t",
+            header=None,
+            names=["Chromosome", "Start", "End", "Sample"],
+            dtype={"Chromosome": str, "Start": int, "End": int, "Sample": str},
+        )
+    except pd.errors.EmptyDataError:
+        inferred_tracts_samples = []
+    else:
+        inferred_tracts_samples = inferred_tracts["Sample"].unique()
+        inferred_tracts = pr.PyRanges(inferred_tracts).merge(by="Sample")
 
     res = pd.DataFrame(
-        [[
-            cutoff,
-            total_precision,
-            total_recall,
-            *per_sample_metrics,
-        ]],
         columns=[
             "Cutoff",
             "Precision",
             "Recall",
-            "L_TT_sample",
-            "L_IT_sample",
-            "L_TP_sample",
-            "L_FP_sample",
-            "L_TN_sample",
-            "L_FN_sample",
-        ],
+        ]
     )
+
+    precisions = []
+    recalls = []
+
+    overlap = np.intersect1d(true_tracts_samples, inferred_tracts_samples)
+    true_tracts_only = np.setdiff1d(true_tracts_samples, inferred_tracts_samples)
+    inferred_tracts_only = np.setdiff1d(inferred_tracts_samples, true_tracts_samples)
+
+    # Samples exist in both true_tracts and inferred_tracts
+    for s in overlap:
+        ind_true_tracts = true_tracts[true_tracts.Sample == s]
+        ind_inferred_tracts = inferred_tracts[inferred_tracts.Sample == s]
+        ind_overlaps = ind_true_tracts.intersect(ind_inferred_tracts)
+
+        ntrue_tracts = (ind_true_tracts.End - ind_true_tracts.Start).sum()
+        ninferred_tracts = (ind_inferred_tracts.End - ind_inferred_tracts.Start).sum()
+        ntrue_positives = (
+            (ind_overlaps.End - ind_overlaps.Start).sum() if len(ind_overlaps) > 0 else 0
+        )
+
+        precision, recall = calc_pr(ntrue_tracts, ninferred_tracts, ntrue_positives)
+        precisions.append(precision)
+        recalls.append(recall)
+
+    # Samples only exist in true_tracts
+    for s in true_tracts_only:
+        ind_true_tracts = true_tracts[true_tracts.Sample == s]
+
+        ninferred_tracts = 0
+        ntrue_positives = 0
+        ntrue_tracts = (ind_true_tracts.End - ind_true_tracts.Start).sum()
+
+        precision, recall = calc_pr(ntrue_tracts, ninferred_tracts, ntrue_positives)
+        precisions.append(precision)
+        recalls.append(recall)
+
+    # Samples only exist in inferred_tracts
+    for s in inferred_tracts_only:
+        ind_inferred_tracts = inferred_tracts[inferred_tracts.Sample == s]
+
+        ntrue_tracts = 0
+        ntrue_positives = 0
+        ninferred_tracts = (ind_inferred_tracts.End - ind_inferred_tracts.Start).sum()
+
+        precision, recall = calc_pr(ntrue_tracts, ninferred_tracts, ntrue_positives)
+        precisions.append(precision)
+        recalls.append(recall)
+
+    avg_precision = np.nanmean(precisions)
+    avg_recall = np.nanmean(recalls)
+
+    res.loc[len(res.index)] = [
+        cutoff,
+        avg_precision,
+        avg_recall,
+    ]
 
     res.fillna("NaN").to_csv(output, sep="\t", index=False)
 
