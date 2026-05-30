@@ -78,7 +78,7 @@ rule sstar_quantile:
           --seq-len {params.pop_config.win_len} \
           --snp-num-range 50 350 5 \
           --output-dir {params.output_dir} \
-          --quantile-step 0.00001
+          --quantile-step 0.00001 \
           --thread {resources.cpus} \
         """
 
