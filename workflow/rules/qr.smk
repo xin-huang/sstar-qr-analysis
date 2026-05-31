@@ -41,6 +41,7 @@ rule get_qr_inferred_tracts:
         bed="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
     wildcard_constraints:
         qr_model = "qrf|quantile",
+    localrule: True,
     shell:
         r"""
         awk 'BEGIN{{FS=OFS="\t"}} NR==1{{next}} $5>$9 {{print $1,$2,$3,$4}}' {input.preds} | awk 'BEGIN{{FS=OFS="\t"}} {{if ("{wildcards.phase_state}"=="phased") gsub(/hap/, "", $4); print}}' > {output.bed}
@@ -58,5 +59,6 @@ rule evaluate_qr:
     params:
         length_bp=200_000_000,
         cutoff="{quantile}",
+    localrule: True,
     script:
         "../scripts/segment_based_evaluation.py"

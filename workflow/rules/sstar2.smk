@@ -26,6 +26,7 @@ rule render_sstar2_config_template:
         config="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.config.yaml",
     params:
         sstar2=get_sstar2_config_params,
+    localrule: True,
     template_engine:
         "yte"
 
@@ -73,5 +74,6 @@ rule evaluate_sstar2:
     params:
         length_bp=TEST_LENGTH_BP,
         cutoff="{quantile}",
+    localrule: True,
     script:
         "../scripts/segment_based_evaluation.py"

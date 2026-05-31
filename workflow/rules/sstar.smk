@@ -112,6 +112,7 @@ rule get_sstar_inferred_tracts:
         pred="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv",
     output:
         bed="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
+    localrule: True,
     shell:
         r"""
         awk 'BEGIN{{FS=OFS="\t"}} NR==1{{next}} $5>$6 {{print $1,$2,$3,$4}}' {input.pred} | awk 'BEGIN{{FS=OFS="\t"}} {{if ("{wildcards.phase_state}"=="phased") gsub(/hap/, "", $4); print}}' > {output.bed}
@@ -127,5 +128,6 @@ rule evaluate_sstar:
     params:
         length_bp=TEST_LENGTH_BP,
         cutoff="{quantile}",
+    localrule: True,
     script:
         "../scripts/segment_based_evaluation.py"

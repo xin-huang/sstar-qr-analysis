@@ -26,8 +26,8 @@ import numpy as np
 TRAINING_REP = 1000
 TEST_REP = 10
 DEMOGRAPHIC_MODELS = [
-    "ArchIE_3D19",
-    "HumanNeanderthal_4G21",
+    #"ArchIE_3D19",
+    #"HumanNeanderthal_4G21",
     "BonoboGhost_4K19",
 ]
 PHASE_STATES = ["phased", "unphased"]
