@@ -90,7 +90,9 @@ rule sstar_threshold:
     output:
         pred=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv"),
     params:
-       phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
+        phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
+    resources:
+        mem_mb=16000,
     conda:
         "../envs/sstar.yaml",
     shell:
