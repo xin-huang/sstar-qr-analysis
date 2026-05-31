@@ -26,8 +26,8 @@ import numpy as np
 TRAINING_REP = 1000
 TEST_REP = 10
 DEMOGRAPHIC_MODELS = [
-    #"ArchIE_3D19",
-    #"HumanNeanderthal_4G21",
+    "ArchIE_3D19",
+    "HumanNeanderthal_4G21",
     "BonoboGhost_4K19",
 ]
 PHASE_STATES = ["phased", "unphased"]
@@ -61,7 +61,7 @@ POP_CONFIGS = {
         tgt="CEU",
         src="Nea",
         mut_rate=1.29e-8,
-        rec_rate=1e-8,
+        rec_rate=1.0e-8,
         win_len=50_000,
     ),
     "BonoboGhost_4K19": PopConfig(
