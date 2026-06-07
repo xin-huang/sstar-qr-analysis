@@ -55,6 +55,7 @@ rule sstar_quantile:
     params:
         ms_dir="resources/msdir",
         output_dir="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}",
+        phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
         pop_config=get_pop_config,
         sample_size=get_sample_size,
     resources:
@@ -80,6 +81,7 @@ rule sstar_quantile:
           --output-dir {params.output_dir} \
           --quantile-step 0.00001 \
           --thread {resources.cpus} \
+          {params.phased_flag}
         """
 
 
