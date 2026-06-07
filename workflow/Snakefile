@@ -61,7 +61,7 @@ POP_CONFIGS = {
         tgt="CEU",
         src="Nea",
         mut_rate=1.29e-8,
-        rec_rate=1e-8,
+        rec_rate=1.0e-8,
         win_len=50_000,
     ),
     "BonoboGhost_4K19": PopConfig(

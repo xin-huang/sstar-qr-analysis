@@ -34,6 +34,7 @@ rule simulate_training_data:
         sim=lambda wildcards: get_simulation_params(wildcards, "training"),
     resources:
         mem_mb=16000,
+    localrule: True,
     script:
         "../scripts/msprime_simulation.py"
 
@@ -64,6 +65,7 @@ rule extract_training_biallelic_snps:
     output:
         vcf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.biallelic.snps.vcf.gz"),
         idx=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.biallelic.snps.vcf.gz.tbi"),
+    localrule: True,
     shell:
         """
         bcftools view {input.vcf} -v snps -m 2 -M 2 -g ^miss | bgzip -c > {output.vcf}
@@ -99,6 +101,7 @@ rule calc_training_sstar_score:
         training_rep = r"\d+",
     resources:
         mem_mb=16000, cpus=4,
+    localrule: True,
     conda:
         "../envs/sstar.yaml",
     shell:

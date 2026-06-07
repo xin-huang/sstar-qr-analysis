@@ -135,4 +135,4 @@ else:
     pred_df["expected_S*_score"] = model.predict(x_pred)
 
 
-pred_df.to_csv(snakemake.output.preds, sep="\t", index=False)
+pred_df.to_csv(snakemake.output.pred, sep="\t", index=False)

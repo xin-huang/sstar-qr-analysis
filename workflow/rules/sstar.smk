@@ -55,6 +55,7 @@ rule sstar_quantile:
     params:
         ms_dir="resources/msdir",
         output_dir="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}",
+        phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
         pop_config=get_pop_config,
         sample_size=get_sample_size,
     resources:
@@ -78,7 +79,9 @@ rule sstar_quantile:
           --seq-len {params.pop_config.win_len} \
           --snp-num-range 50 350 5 \
           --output-dir {params.output_dir} \
+          --quantile-step 0.00001 \
           --thread {resources.cpus} \
+          {params.phased_flag}
         """
 
 
@@ -89,7 +92,9 @@ rule sstar_threshold:
     output:
         pred=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv"),
     params:
-       phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
+        phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
+    resources:
+        mem_mb=16000,
     conda:
         "../envs/sstar.yaml",
     shell:
@@ -109,6 +114,7 @@ rule get_sstar_inferred_tracts:
         pred="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv",
     output:
         bed="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
+    localrule: True,
     shell:
         r"""
         awk 'BEGIN{{FS=OFS="\t"}} NR==1{{next}} $5>$6 {{print $1,$2,$3,$4}}' {input.pred} | awk 'BEGIN{{FS=OFS="\t"}} {{if ("{wildcards.phase_state}"=="phased") gsub(/hap/, "", $4); print}}' > {output.bed}
@@ -124,5 +130,6 @@ rule evaluate_sstar:
     params:
         length_bp=TEST_LENGTH_BP,
         cutoff="{quantile}",
+    localrule: True,
     script:
         "../scripts/segment_based_evaluation.py"
