@@ -24,6 +24,8 @@ rule render_sstar2_config_template:
         vcf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.biallelic.snps.vcf.gz",
     output:
         config="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.config.yaml",
+    wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
     params:
         sstar2=get_sstar2_config_params,
     template_engine:
@@ -36,6 +38,8 @@ rule run_sstar2_train:
         config="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.config.yaml",
     output:
         model="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.onnx",
+    wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
     resources:
         mem_mb=64000, cpus=32, time=360,
     conda:
@@ -54,6 +58,8 @@ rule run_sstar2_infer:
         feat=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.processed.features.tsv"),
         pred=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.pred.tsv"),
         tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
+    wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
     resources:
         mem_mb=64000, cpus=32,
     conda:
@@ -70,6 +76,8 @@ rule evaluate_sstar2:
         inferred_tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
     output:
         tsv="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
+    wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
     params:
         length_bp=TEST_LENGTH_BP,
         cutoff="{quantile}",

@@ -31,6 +31,14 @@ def get_simulation_params(wildcards, split):
         seed = seed_lists[split][int(wildcards.test_rep)]
         length_bp = TEST_LENGTH_BP
 
+    src1_tract_sources = pop.src1_tract_sources
+    if src1_tract_sources is None:
+        src1_tract_sources = (pop.src1,)
+
+    src2_tract_sources = pop.src2_tract_sources
+    if src2_tract_sources is None:
+        src2_tract_sources = () if pop.src2 is None else (pop.src2,)
+
     return {
         "length_bp": length_bp,
         "ploidy": 2,
@@ -39,7 +47,12 @@ def get_simulation_params(wildcards, split):
         "rho": pop.rec_rate,
         "ref_id": pop.ref,
         "tgt_id": pop.tgt,
-        "src_id": pop.src,
+        "src1_id": pop.src1,
+        "src2_id": pop.src2,
+        "src1_sampling_time": pop.src1_sampling_time,
+        "src2_sampling_time": pop.src2_sampling_time,
+        "src1_tract_sources": src1_tract_sources,
+        "src2_tract_sources": src2_tract_sources,
     }
 
 
