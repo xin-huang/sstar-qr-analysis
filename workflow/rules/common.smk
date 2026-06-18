@@ -39,7 +39,10 @@ def get_simulation_params(wildcards, split):
         "rho": pop.rec_rate,
         "ref_id": pop.ref,
         "tgt_id": pop.tgt,
-        "src_id": pop.src,
+        "src1_id": pop.src1,
+        "src2_id": pop.src2,
+        "src1_sampling_time": pop.src1_sampling_time,
+        "src2_sampling_time": pop.src2_sampling_time,
     }
 
 

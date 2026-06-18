@@ -77,15 +77,19 @@ def simulate(
     demog: str,
     nref: int,
     ntgt: int,
-    nsrc: int,
     ref_id: str,
     tgt_id: str,
-    src_id: str,
+    src1_id: str,
+    src2_id: str,
     seq_len: int,
     mut_rate: float,
     rec_rate: float,
     seed: int,
     ploidy: int = 2,
+    nsrc1: int = 1,
+    nsrc2: int = 1,
+    src1_sampling_time: float = None,
+    src2_sampling_time: float = None,
 ) -> tskit.TreeSequence:
     """
     Simulate ancestry and mutations under a demography specified in a demes model.
@@ -96,16 +100,16 @@ def simulate(
         Demes model specification.
     nref : int
         Number of reference samples.
-    ntgt : ini
+    ntgt : int
         Number of target samples.
-    nsrc : int
-        Number of source samples.
     ref_id : str
         Population identifier in the demography for the reference population.
     tgt_id : str
         Population identifier in the demography for the target population.
-    src_id : str
-        Population identifier in the demography for the source population.
+    src1_id : str
+        Population identifier in the demography for the first source population.
+    src2_id : str
+        Population identifier in the demography for the optional second source population.
     seq_len : float
         Simulated sequence length.
     mut_rate : float
@@ -116,6 +120,14 @@ def simulate(
         Random seed used for both ancestry and mutation simulations.
     ploidy : int, optional
         Ploidy of samples in all populations, by default 2.
+    nsrc1 : int, optional
+        Number of samples from the first source population, by default 1.
+    nsrc2 : int, optional
+        Number of samples from the second source population, by default 1.
+    src1_sampling_time : float, optional
+        Sampling time for the first source population.
+    src2_sampling_time : float, optional
+        Sampling time for the second source population.
 
     Returns
     -------
@@ -127,8 +139,23 @@ def simulate(
     samples = [
         msprime.SampleSet(nref, ploidy=ploidy, population=ref_id),
         msprime.SampleSet(ntgt, ploidy=ploidy, population=tgt_id),
-        msprime.SampleSet(nsrc, ploidy=ploidy, population=src_id),
+        msprime.SampleSet(
+            nsrc1,
+            ploidy=ploidy,
+            population=src1_id,
+            time=src1_sampling_time,
+        ),
     ]
+
+    if src2_id is not None:
+        samples.append(
+            msprime.SampleSet(
+                nsrc2,
+                ploidy=ploidy,
+                population=src2_id,
+                time=src2_sampling_time,
+            )
+        )
 
     ts = msprime.sim_ancestry(
         recombination_rate=rec_rate,
@@ -151,37 +178,21 @@ def simulate(
 def create_sample_lists(
     nref: int,
     ntgt: int,
-    nsrc: int,
     ref_list: str,
     tgt_list: str,
     src_list: str,
+    src2_list: str = None,
+    nsrc1: int = 1,
+    nsrc2: int = 1,
     identifier: str = "tsk",
 ) -> None:
     """
     Create text files with sample identifiers for each population.
-
-    Parameters
-    ----------
-    nref : int
-        Number of reference samples.
-    ntgt : int
-        Number of target samples.
-    nsrc : int
-        Number of source samples.
-    ref_list : str
-        Path to the output file containing reference sample identifiers.
-    tgt_list : str
-        Path to the output file containing target sample identifiers.
-    src_list : str
-        Path to the output file containing source sample identifiers.
-    out_list : str
-        Path to the output file containing outgroup sample identifiers.
-    identifier : str, optional
-        Prefix used for all sample identifiers, by default "tsk".
     """
     ref_range = nref
     tgt_range = ref_range + ntgt
-    src_range = tgt_range + nsrc
+    src1_range = tgt_range + nsrc1
+    src2_range = src1_range + nsrc2
 
     with open(ref_list, "w") as f:
         for i in range(ref_range):
@@ -192,8 +203,13 @@ def create_sample_lists(
             f.write(f"{identifier}_{i}\n")
 
     with open(src_list, "w") as f:
-        for i in range(tgt_range, src_range):
+        for i in range(tgt_range, src1_range):
             f.write(f"{identifier}_{i}\n")
+
+    if src2_list is not None:
+        with open(src2_list, "w") as f:
+            for i in range(src1_range, src2_range):
+                f.write(f"{identifier}_{i}\n")
 
 
 def get_true_tracts(
@@ -274,18 +290,26 @@ def get_true_tracts(
 with open(snakemake.output.seed_file, "w") as o:
     o.write(f"{snakemake.params.sim['seed']}\n")
 
+nsrc1 = 1
+nsrc2 = 1 if snakemake.params.sim["src2_id"] is not None else 0
+
 ts = simulate(
     demog=snakemake.input.demes,
     nref=int(snakemake.wildcards.n_ref),
     ntgt=int(snakemake.wildcards.n_tgt),
-    nsrc=int(snakemake.wildcards.n_src),
     ref_id=snakemake.params.sim["ref_id"],
     tgt_id=snakemake.params.sim["tgt_id"],
-    src_id=snakemake.params.sim["src_id"],
+    src1_id=snakemake.params.sim["src1_id"],
+    src2_id=snakemake.params.sim["src2_id"],
     seq_len=int(snakemake.params.sim["length_bp"]),
     mut_rate=float(snakemake.params.sim["mu"]),
     rec_rate=float(snakemake.params.sim["rho"]),
     seed=int(snakemake.params.sim["seed"]),
+    ploidy=int(snakemake.params.sim["ploidy"]),
+    nsrc1=nsrc1,
+    nsrc2=nsrc2,
+    src1_sampling_time=snakemake.params.sim["src1_sampling_time"],
+    src2_sampling_time=snakemake.params.sim["src2_sampling_time"],
 )
 
 ts.dump(snakemake.output.ts)
@@ -297,10 +321,12 @@ with open(snakemake.output.vcf, "w") as o:
 create_sample_lists(
     nref=int(snakemake.wildcards.n_ref),
     ntgt=int(snakemake.wildcards.n_tgt),
-    nsrc=int(snakemake.wildcards.n_src),
     ref_list=snakemake.output.ref_list,
     tgt_list=snakemake.output.tgt_list,
     src_list=snakemake.output.src_list,
+    src2_list=snakemake.output.src2_list,
+    nsrc1=nsrc1,
+    nsrc2=nsrc2,
 )
 
 true_tract_output = {
@@ -312,10 +338,23 @@ for phased_status in ["phased", "unphased"]:
     true_tracts = get_true_tracts(
         ts=ts,
         tgt_id=snakemake.params.sim["tgt_id"],
-        src_id=snakemake.params.sim["src_id"],
+        src_id=snakemake.params.sim["src1_id"],
         is_phased=phased_status == "phased",
         ploidy=int(snakemake.params.sim["ploidy"]),
     )
+
+    if snakemake.params.sim["src2_id"] is not None:
+        src2_true_tracts = get_true_tracts(
+            ts=ts,
+            tgt_id=snakemake.params.sim["tgt_id"],
+            src_id=snakemake.params.sim["src2_id"],
+            is_phased=phased_status == "phased",
+            ploidy=int(snakemake.params.sim["ploidy"]),
+        )
+
+        src2_body = "\n".join(src2_true_tracts.splitlines()[1:])
+        if src2_body:
+            true_tracts += src2_body + "\n"
 
     true_tracts = pr.from_string(true_tracts).merge(by="Sample")
     if true_tracts.empty:

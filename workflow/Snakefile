@@ -41,17 +41,20 @@ TEST_LENGTH_BP = 200_000_000
 class PopConfig:
     ref: str
     tgt: str
-    src: str
+    src1: str
     mut_rate: float
     rec_rate: float
     win_len: int
+    src2: str = None
+    src1_sampling_time: float = None
+    src2_sampling_time: float = None
 
 
 POP_CONFIGS = {
     "ArchIE_3D19": PopConfig(
         ref="Reference",
         tgt="Target",
-        src="Source",
+        src1="Source",
         mut_rate=1.25e-8,
         rec_rate=1.0e-8,
         win_len=50_000,
@@ -59,7 +62,7 @@ POP_CONFIGS = {
     "HumanNeanderthal_4G21": PopConfig(
         ref="YRI",
         tgt="CEU",
-        src="Nea",
+        src1="Nea",
         mut_rate=1.29e-8,
         rec_rate=1e-8,
         win_len=50_000,
@@ -67,10 +70,30 @@ POP_CONFIGS = {
     "BonoboGhost_4K19": PopConfig(
         ref="Western",
         tgt="Bonobo",
-        src="Ghost",
+        src1="Ghost",
         mut_rate=1.2e-8,
         rec_rate=0.7e-8,
         win_len=40_000,
+    ),
+    "ChimpBonoboGhost_4K19": PopConfig(
+        ref="Western",
+        tgt="Central",
+        src1="Bonobo",
+        src2="Ghost",
+        mut_rate=1.2e-8,
+        rec_rate=0.7e-8,
+        win_len=40_000,
+    ),
+    "HumanNeanderthalDenisovan_PapuansOutOfAfrica_10J19": PopConfig(
+        ref="YRI",
+        tgt="Papuan",
+        src1="NeaA",
+        src2="DenA",
+        mut_rate=1.4e-8,
+        rec_rate=1e-8,
+        win_len=50_000,
+        src1_sampling_time=75748 / 29,
+        src2_sampling_time=59682 / 29,
     ),
 }
 
