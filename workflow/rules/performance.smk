@@ -30,6 +30,8 @@ rule collect_qr_performance_across_cutoffs:
         ),
     output:
         perf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.pred.perf.tsv"),
+    wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
     shell:
         r"""
         cat {input.perf} | grep -v Cutoff | awk -v rep={wildcards.test_rep} -v method="{wildcards.qr_model}" -v nref={wildcards.n_ref} -v ntgt={wildcards.n_tgt} '{{print rep"\t"method"\t"nref"\t"ntgt"\t"$0}}' > {output.perf}
@@ -46,6 +48,8 @@ rule collect_sstar_performance_across_cutoffs:
         ),
     output:
         perf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{version}/{phase_state}/rep_{test_rep}/{version}.pred.perf.tsv"),
+    wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
     shell:
         r"""
         cat {input.perf} | grep -v Cutoff | awk -v rep={wildcards.test_rep} -v version={wildcards.version} -v nref={wildcards.n_ref} -v ntgt={wildcards.n_tgt} '{{print rep"\t"version"\t"nref"\t"ntgt"\t"$0}}' > {output.perf}
@@ -69,6 +73,8 @@ rule collect_performance_across_replicates:
         ),
     output:
         perf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/performance/{phase_state}/combined.pred.perf.tsv",
+    wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
     shell:
         r"""
         head -n 1 {input.qr[0]} > {output.perf}
@@ -81,7 +87,7 @@ rule plot_pr_curve:
     input:
         perf=expand(
             "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/performance/{phase_state}/combined.pred.perf.tsv",
-            demog_model=DEMOGRAPHIC_MODELS,
+            demog_model=SINGLE_SOURCE_MODELS,
             phase_state=PHASE_STATES,
             allow_missing=True,
         ),
