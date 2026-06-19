@@ -7,3 +7,4 @@ logs
 logs_slurm
 results*
 seedms
+*__pycache__*

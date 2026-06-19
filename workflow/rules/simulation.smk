@@ -55,7 +55,7 @@ rule simulate_test_data:
     params:
         sim=lambda wildcards: get_simulation_params(wildcards, "test"),
     resources:
-        time=360, mem_mb=16000,
+        time=1440, mem_mb=16000,
     script:
         "../scripts/msprime_simulation.py"
 

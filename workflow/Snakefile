@@ -24,11 +24,13 @@ import numpy as np
 
 
 TRAINING_REP = 1000
-TEST_REP = 10
+TEST_REP = 1
 DEMOGRAPHIC_MODELS = [
-    "ArchIE_3D19",
-    "HumanNeanderthal_4G21",
-    "BonoboGhost_4K19",
+    #"ArchIE_3D19",
+    #"HumanNeanderthal_4G21",
+    #"BonoboGhost_4K19",
+    "ChimpBonoboGhost_4K19",
+    "HumanNeanderthalDenisovan_PapuansOutOfAfrica_10J19",
 ]
 PHASE_STATES = ["phased", "unphased"]
 N_REFS = [50]

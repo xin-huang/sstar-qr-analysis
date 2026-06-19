@@ -216,6 +216,7 @@ def get_true_tracts(
     ts: tskit.TreeSequence,
     tgt_id: str,
     src_id: str,
+    output: str,
     is_phased: bool = True,
     ploidy: int = 2,
 ) -> str:
@@ -284,7 +285,11 @@ def get_true_tracts(
                             sample_id = f"tsk_{ts.node(n).individual}"
                         tracts += f"1\t{int(left)}\t{int(right)}\t{sample_id}\n"
 
-    return tracts
+    true_tracts = pr.from_string(true_tracts).merge(by="Sample")
+    if true_tracts.empty:
+        open(output, "w").close()
+    else:
+        true_tracts.to_csv(output, sep="\t", header=False)
 
 
 with open(snakemake.output.seed_file, "w") as o:
@@ -339,6 +344,7 @@ for phased_status in ["phased", "unphased"]:
         ts=ts,
         tgt_id=snakemake.params.sim["tgt_id"],
         src_id=snakemake.params.sim["src1_id"],
+        output=true_tract_output[phased_status],
         is_phased=phased_status == "phased",
         ploidy=int(snakemake.params.sim["ploidy"]),
     )
@@ -348,16 +354,7 @@ for phased_status in ["phased", "unphased"]:
             ts=ts,
             tgt_id=snakemake.params.sim["tgt_id"],
             src_id=snakemake.params.sim["src2_id"],
+            output=true_tract_output[phased_status],
             is_phased=phased_status == "phased",
             ploidy=int(snakemake.params.sim["ploidy"]),
         )
-
-        src2_body = "\n".join(src2_true_tracts.splitlines()[1:])
-        if src2_body:
-            true_tracts += src2_body + "\n"
-
-    true_tracts = pr.from_string(true_tracts).merge(by="Sample")
-    if true_tracts.empty:
-        open(true_tract_output[phased_status], "w").close()
-    else:
-        true_tracts.to_csv(true_tract_output[phased_status], sep="\t", header=False)
