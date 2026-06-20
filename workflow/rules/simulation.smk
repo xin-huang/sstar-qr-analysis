@@ -94,11 +94,14 @@ rule simulate_two_source_test_data:
 rule two_source_test_simulation:
     input:
         expand(
-            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_0/simulation.rep_0.src1.true.tracts.phased.bed",
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.{tract_source}.true.tracts.{phase_state}.bed",
             demog_model=TWO_SOURCE_MODELS,
             n_ref=N_REFS,
             n_tgt=N_TGTS,
             n_src=N_SRCS,
+            test_rep=range(TEST_REP),
+            tract_source=["src1", "src2"],
+            phase_state=PHASE_STATES,
         )
 
 
