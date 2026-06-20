@@ -87,7 +87,7 @@ rule plot_pr_curve:
     input:
         perf=expand(
             "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/performance/{phase_state}/combined.pred.perf.tsv",
-            demog_model=DEMOGRAPHIC_MODELS,
+            demog_model=SINGLE_SOURCE_MODELS,
             phase_state=PHASE_STATES,
             allow_missing=True,
         ),
