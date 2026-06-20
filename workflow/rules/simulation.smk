@@ -18,7 +18,30 @@
 #    https://www.gnu.org/licenses/gpl-3.0.en.html
 
 
-rule simulate_training_data:
+rule simulate_single_source_training_data:
+    input:
+        demes="config/demog_models/{demog_model}_wo_introgression.yaml",
+    output:
+        ts=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.ts"),
+        vcf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.vcf"),
+        ref_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.ref.list"),
+        tgt_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.tgt.list"),
+        src_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.src.list"),
+        src2_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.src2.list"),
+        seed_file=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.seedmsprime"),
+        bed_phased=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.true.tracts.phased.bed"),
+        bed_unphased=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.true.tracts.unphased.bed"),
+    params:
+        sim=lambda wildcards: get_simulation_params(wildcards, "training"),
+    wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
+    resources:
+        mem_mb=16000,
+    script:
+        "../scripts/msprime_simulation.py"
+
+
+rule simulate_two_source_training_data:
     input:
         demes="config/demog_models/{demog_model}_wo_introgression.yaml",
     output:
@@ -35,13 +58,39 @@ rule simulate_training_data:
         bed_src2_unphased=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.src2.true.tracts.unphased.bed"),
     params:
         sim=lambda wildcards: get_simulation_params(wildcards, "training"),
+    wildcard_constraints:
+        demog_model=TWO_SOURCE_MODELS_REGEX,
     resources:
         mem_mb=16000,
     script:
         "../scripts/msprime_simulation.py"
 
 
-rule simulate_test_data:
+rule simulate_single_source_test_data:
+    input:
+        demes="config/demog_models/{demog_model}.yaml",
+    output:
+        ts=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.ts"),
+        vcf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.vcf"),
+        ref_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.ref.list"),
+        tgt_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.tgt.list"),
+        src_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.src.list"),
+        src2_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.src2.list"),
+        seed_file=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.seedmsprime"),
+        bed_phased="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.phased.bed",
+        bed_unphased="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.unphased.bed",
+    params:
+        sim=lambda wildcards: get_simulation_params(wildcards, "test"),
+    wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
+    resources:
+        time=1440,
+        mem_mb=16000,
+    script:
+        "../scripts/msprime_simulation.py"
+
+
+rule simulate_two_source_test_data:
     input:
         demes="config/demog_models/{demog_model}.yaml",
     output:
@@ -58,23 +107,13 @@ rule simulate_test_data:
         bed_src2_unphased="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.src2.true.tracts.unphased.bed",
     params:
         sim=lambda wildcards: get_simulation_params(wildcards, "test"),
+    wildcard_constraints:
+        demog_model=TWO_SOURCE_MODELS_REGEX,
     resources:
         time=1440,
         mem_mb=16000,
     script:
         "../scripts/msprime_simulation.py"
-
-
-rule combine_true_tracts:
-    input:
-        src1="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.src1.true.tracts.{phase_state}.bed",
-        src2="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.src2.true.tracts.{phase_state}.bed",
-    output:
-        bed="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.{phase_state}.bed",
-    shell:
-        """
-        cat {input.src1} {input.src2} > {output.bed}
-        """
 
 
 rule extract_training_biallelic_snps:

@@ -19,6 +19,7 @@
 
 
 from dataclasses import dataclass
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -33,6 +34,7 @@ DEMOGRAPHIC_MODELS = [
     "HumanNeanderthalDenisovan_PapuansOutOfAfrica_10J19",
 ]
 PHASE_STATES = ["phased", "unphased"]
+SOURCE_LABELS = ["src1", "src2"]
 N_REFS = [50]
 N_TGTS = [50]
 N_SRCS = [0]
@@ -47,9 +49,11 @@ class PopConfig:
     mut_rate: float
     rec_rate: float
     win_len: int
-    src2: str = None
-    src1_sampling_time: float = None
-    src2_sampling_time: float = None
+    src2: Optional[str] = None
+    src1_sampling_time: Optional[float] = None
+    src2_sampling_time: Optional[float] = None
+    src1_tract_sources: Optional[Tuple[str, ...]] = None
+    src2_tract_sources: Optional[Tuple[str, ...]] = None
 
 
 POP_CONFIGS = {
@@ -80,8 +84,8 @@ POP_CONFIGS = {
     "ChimpBonoboGhost_4K19": PopConfig(
         ref="Western",
         tgt="Central",
-        src1="Bonobo",
-        src2="Ghost",
+        src1="Ghost",
+        src2="Bonobo",
         mut_rate=1.2e-8,
         rec_rate=0.7e-8,
         win_len=40_000,
@@ -96,8 +100,19 @@ POP_CONFIGS = {
         win_len=50_000,
         src1_sampling_time=75748 / 29,
         src2_sampling_time=59682 / 29,
+        src1_tract_sources=("Nea1",),
+        src2_tract_sources=("Den1", "Den2"),
     ),
 }
+
+SINGLE_SOURCE_MODELS = [
+    model for model in DEMOGRAPHIC_MODELS if POP_CONFIGS[model].src2 is None
+]
+TWO_SOURCE_MODELS = [
+    model for model in DEMOGRAPHIC_MODELS if POP_CONFIGS[model].src2 is not None
+]
+SINGLE_SOURCE_MODELS_REGEX = "|".join(SINGLE_SOURCE_MODELS) or r"(?!)"
+TWO_SOURCE_MODELS_REGEX = "|".join(TWO_SOURCE_MODELS) or r"(?!)"
 
 rng = np.random.default_rng(3821)
 all_seeds = rng.choice(
@@ -119,7 +134,8 @@ cutoffs = np.concatenate([np.array([0.001, 0.01]), cutoffs, np.array([0.99, 0.99
 rule all:
     input:
         expand(
-            "results/plots/pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.png",
+            "results/plots/{source_label}.pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.png",
+            source_label=SOURCE_LABELS,
             n_ref=N_REFS,
             n_tgt=N_TGTS,
             n_src=N_SRCS,

@@ -66,10 +66,10 @@ rule run_sstar2_infer:
 
 rule evaluate_sstar2:
     input:
-        true_tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.{phase_state}.bed",
+        true_tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.{source_label}.true.tracts.{phase_state}.bed",
         inferred_tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/q_{quantile}/sstar2.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
     output:
-        tsv="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{phase_state}/rep_{test_rep}/sstar2.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
+        tsv="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar2/{source_label}/{phase_state}/rep_{test_rep}/sstar2.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
     params:
         length_bp=TEST_LENGTH_BP,
         cutoff="{quantile}",

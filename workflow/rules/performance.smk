@@ -24,12 +24,12 @@ ruleorder: collect_sstar_performance_across_cutoffs > collect_qr_performance_acr
 rule collect_qr_performance_across_cutoffs:
     input:
         perf=expand(
-            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{source_label}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
             quantile=cutoffs,
             allow_missing=True,
         ),
     output:
-        perf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.pred.perf.tsv"),
+        perf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{source_label}/{phase_state}/rep_{test_rep}/{qr_model}.pred.perf.tsv"),
     shell:
         r"""
         cat {input.perf} | grep -v Cutoff | awk -v rep={wildcards.test_rep} -v method="{wildcards.qr_model}" -v nref={wildcards.n_ref} -v ntgt={wildcards.n_tgt} '{{print rep"\t"method"\t"nref"\t"ntgt"\t"$0}}' > {output.perf}
@@ -40,12 +40,12 @@ rule collect_qr_performance_across_cutoffs:
 rule collect_sstar_performance_across_cutoffs:
     input:
         perf=expand(
-            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{version}/{phase_state}/rep_{test_rep}/{version}.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{version}/{source_label}/{phase_state}/rep_{test_rep}/{version}.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
             quantile=cutoffs,
             allow_missing=True,
         ),
     output:
-        perf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{version}/{phase_state}/rep_{test_rep}/{version}.pred.perf.tsv"),
+        perf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{version}/{source_label}/{phase_state}/rep_{test_rep}/{version}.pred.perf.tsv"),
     shell:
         r"""
         cat {input.perf} | grep -v Cutoff | awk -v rep={wildcards.test_rep} -v version={wildcards.version} -v nref={wildcards.n_ref} -v ntgt={wildcards.n_tgt} '{{print rep"\t"version"\t"nref"\t"ntgt"\t"$0}}' > {output.perf}
@@ -56,19 +56,19 @@ rule collect_sstar_performance_across_cutoffs:
 rule collect_performance_across_replicates:
     input:
         qr=expand(
-            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.pred.perf.tsv",
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{source_label}/{phase_state}/rep_{test_rep}/{qr_model}.pred.perf.tsv",
             qr_model=["quantile", "qrf"],
             test_rep=range(TEST_REP),
             allow_missing=True,
         ),
         sstar=expand(
-            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{version}/{phase_state}/rep_{test_rep}/{version}.pred.perf.tsv",
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{version}/{source_label}/{phase_state}/rep_{test_rep}/{version}.pred.perf.tsv",
             version=["sstar", "sstar2"],
             test_rep=range(TEST_REP),
             allow_missing=True,
         ),
     output:
-        perf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/performance/{phase_state}/combined.pred.perf.tsv",
+        perf="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/performance/{source_label}/{phase_state}/combined.pred.perf.tsv",
     shell:
         r"""
         head -n 1 {input.qr[0]} > {output.perf}
@@ -80,13 +80,13 @@ rule collect_performance_across_replicates:
 rule plot_pr_curve:
     input:
         perf=expand(
-            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/performance/{phase_state}/combined.pred.perf.tsv",
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/performance/{source_label}/{phase_state}/combined.pred.perf.tsv",
             demog_model=DEMOGRAPHIC_MODELS,
             phase_state=PHASE_STATES,
             allow_missing=True,
         ),
     output:
-        plot="results/plots/pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.png",
-        summary_tsv="results/plots/pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.summary.tsv",
+        plot="results/plots/{source_label}.pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.png",
+        summary_tsv="results/plots/{source_label}.pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.summary.tsv",
     script:
         "../scripts/plot_pr_curve.py"
