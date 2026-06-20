@@ -34,7 +34,6 @@ DEMOGRAPHIC_MODELS = [
     "HumanNeanderthalDenisovan_PapuansOutOfAfrica_10J19",
 ]
 PHASE_STATES = ["phased", "unphased"]
-SOURCE_LABELS = ["src1", "src2"]
 N_REFS = [50]
 N_TGTS = [50]
 N_SRCS = [0]
@@ -134,8 +133,7 @@ cutoffs = np.concatenate([np.array([0.001, 0.01]), cutoffs, np.array([0.99, 0.99
 rule all:
     input:
         expand(
-            "results/plots/{source_label}.pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.png",
-            source_label=SOURCE_LABELS,
+            "results/plots/pred.nref_{n_ref}.ntgt_{n_tgt}.nsrc_{n_src}.pr.curve.combined.png",
             n_ref=N_REFS,
             n_tgt=N_TGTS,
             n_src=N_SRCS,
