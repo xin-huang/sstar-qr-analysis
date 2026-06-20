@@ -285,7 +285,7 @@ def get_true_tracts(
                             sample_id = f"tsk_{ts.node(n).individual}"
                         tracts += f"1\t{int(left)}\t{int(right)}\t{sample_id}\n"
 
-    true_tracts = pr.from_string(true_tracts).merge(by="Sample")
+    true_tracts = pr.from_string(tracts).merge(by="Sample")
     if true_tracts.empty:
         open(output, "w").close()
     else:
