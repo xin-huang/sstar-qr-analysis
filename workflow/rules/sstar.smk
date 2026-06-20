@@ -25,6 +25,8 @@ rule sstar_score:
         tgt_list="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.tgt.list",
     output:
         scores="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/sstar.{phase_state}.rep_{test_rep}.scores.tsv",
+    wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
     params:
         pop_config=get_pop_config,
         win_step=10000,
@@ -52,6 +54,8 @@ rule sstar_quantile:
         model="config/demog_models/{demog_model}_wo_introgression.yaml",
     output:
         quantile="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/quantile.summary.txt",
+    wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
     params:
         ms_dir="resources/msdir",
         output_dir="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}",
@@ -88,6 +92,8 @@ rule sstar_threshold:
         quantile="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/quantile.summary.txt",
     output:
         pred=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv"),
+    wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
     params:
        phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
     conda:
@@ -109,6 +115,8 @@ rule get_sstar_inferred_tracts:
         pred="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv",
     output:
         bed="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
+    wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
     shell:
         r"""
         awk 'BEGIN{{FS=OFS="\t"}} NR==1{{next}} $5>$6 {{print $1,$2,$3,$4}}' {input.pred} | awk 'BEGIN{{FS=OFS="\t"}} {{if ("{wildcards.phase_state}"=="phased") gsub(/hap/, "", $4); print}}' > {output.bed}
@@ -121,6 +129,8 @@ rule evaluate_sstar:
         inferred_tracts="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
     output:
         tsv="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/sstar/{phase_state}/rep_{test_rep}/sstar.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
+    wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
     params:
         length_bp=TEST_LENGTH_BP,
         cutoff="{quantile}",

@@ -25,6 +25,7 @@ rule run_qr:
     output:
         pred=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.pred.tsv"),
     wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
         qr_model = "qrf|quantile",
     resources:
         time=720, mem_mb=16000,
@@ -40,6 +41,7 @@ rule get_qr_inferred_tracts:
     output:
         bed="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.inferred.tracts.bed",
     wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
         qr_model = "qrf|quantile",
     shell:
         r"""
@@ -54,6 +56,7 @@ rule evaluate_qr:
     output:
         tsv="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/{qr_model}/{phase_state}/rep_{test_rep}/{qr_model}.{phase_state}.q_{quantile}.rep_{test_rep}.perf.tsv",
     wildcard_constraints:
+        demog_model=SINGLE_SOURCE_MODELS_REGEX,
         qr_model = "qrf|quantile",
     params:
         length_bp=200_000_000,
