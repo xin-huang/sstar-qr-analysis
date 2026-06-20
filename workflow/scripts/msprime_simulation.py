@@ -32,29 +32,6 @@ def get_haplotype_index(
 ) -> int:
     """
     Get 1-based haplotype index of a node within its associated individual.
-
-    Parameters
-    ----------
-    ts : tskit.TreeSequence
-        Tree sequence containing node and individual tables.
-    node_id : int
-        Node identifier whose haplotype index will be computed.
-    expected_ploidy : int, optional
-        Expected number of nodes associated with the node's individual. If
-        provided, the function validates that ``len(individual.nodes)`` equals
-        this value.
-
-    Returns
-    -------
-    int
-        One-based position of ``node_id`` in ``ts.individual(ind_id).nodes``.
-
-    Raises
-    ------
-    ValueError
-        If ``node_id`` has no associated individual, if the individual's node
-        count does not match ``expected_ploidy``, or if ``node_id`` is not found
-        in the associated individual's node list.
     """
     ind_id = ts.node(node_id).individual
     if ind_id == tskit.NULL:
@@ -65,6 +42,7 @@ def get_haplotype_index(
         raise ValueError(
             f"Individual {ind_id} has {len(ind_nodes)} nodes, expected {expected_ploidy}."
         )
+
     try:
         return ind_nodes.index(node_id) + 1
     except ValueError as e:
@@ -93,49 +71,10 @@ def simulate(
 ) -> tskit.TreeSequence:
     """
     Simulate ancestry and mutations under a demography specified in a demes model.
-
-    Parameters
-    ----------
-    demog : str
-        Demes model specification.
-    nref : int
-        Number of reference samples.
-    ntgt : int
-        Number of target samples.
-    ref_id : str
-        Population identifier in the demography for the reference population.
-    tgt_id : str
-        Population identifier in the demography for the target population.
-    src1_id : str
-        Population identifier in the demography for the first source population.
-    src2_id : str
-        Population identifier in the demography for the optional second source population.
-    seq_len : float
-        Simulated sequence length.
-    mut_rate : float
-        Per-base mutation rate used for ``msprime.sim_mutations``.
-    rec_rate : float
-        Per-base recombination rate used for ``msprime.sim_ancestry``.
-    seed : int
-        Random seed used for both ancestry and mutation simulations.
-    ploidy : int, optional
-        Ploidy of samples in all populations, by default 2.
-    nsrc1 : int, optional
-        Number of samples from the first source population, by default 1.
-    nsrc2 : int, optional
-        Number of samples from the second source population, by default 1.
-    src1_sampling_time : float, optional
-        Sampling time for the first source population.
-    src2_sampling_time : float, optional
-        Sampling time for the second source population.
-
-    Returns
-    -------
-    tskit.TreeSequence
-        Simulated tree sequence with ancestry and mutations.
     """
     demo_graph = demes.load(demog)
     demography = msprime.Demography.from_demes(demo_graph)
+
     samples = [
         msprime.SampleSet(nref, ploidy=ploidy, population=ref_id),
         msprime.SampleSet(ntgt, ploidy=ploidy, population=tgt_id),
@@ -165,6 +104,7 @@ def simulate(
         record_migrations=True,
         random_seed=seed,
     )
+
     ts = msprime.sim_mutations(
         ts,
         rate=mut_rate,
@@ -219,39 +159,17 @@ def get_true_tracts(
     output: str,
     is_phased: bool = True,
     ploidy: int = 2,
-) -> str:
+) -> None:
     """
-    Extract introgressed ancestry tracts for target samples from a tree sequence.
+    Extract true introgressed ancestry tracts for target samples from a tree sequence.
 
-    For all migration events between the specified source and target populations,
-    this function identifies target sample nodes that are descendants of the
-    migrated node in overlapping tree intervals and records the corresponding
-    genomic tracts. The output is a tab-delimited string with a header line:
+    The function writes a BED-like file with columns:
 
         Chromosome  Start  End  Sample
 
-    where `Sample` is formatted as:
-      - `tsk_{individual_id}_{hap_index}` when `is_phased=True`;
-      - `tsk_{individual_id}` when `is_phased=False` (unphased, i.e., union
-        across haplotypes per individual after merge).
-
-    Parameters
-    ----------
-    ts : tskit.TreeSequence
-        Input tree sequence containing population metadata and migration records.
-    tgt_id : str
-        Name of the target population (as stored in ts.populations().metadata["name"]).
-    src_id : str
-        Name of the source population (as stored in ts.populations().metadata["name"]).
-    is_phased : bool, optional
-        Whether to output haplotype-level sample identifiers. Default is True.
-    ploidy : int, optional
-        Ploidy used to infer haplotype index in phased mode. Default is 2.
-    Returns
-    -------
-    str
-        A tab-delimited string listing inferred introgressed tracts with columns
-        Chromosome, Start, End, and Sample.
+    Sample names are:
+      - tsk_{individual_id}_{hap_index} when is_phased=True
+      - tsk_{individual_id} when is_phased=False
     """
     tracts = "Chromosome\tStart\tEnd\tSample\n"
 
@@ -271,21 +189,23 @@ def get_true_tracts(
                 if m.left >= t.interval.right:
                     continue
                 if m.right <= t.interval.left:
-                    break  # [l, r)
+                    break
+
                 for n in ts.samples(tgt_id):
                     if t.is_descendant(n, m.node):
                         left = m.left if m.left > t.interval.left else t.interval.left
-                        right = (
-                            m.right if m.right < t.interval.right else t.interval.right
-                        )
+                        right = m.right if m.right < t.interval.right else t.interval.right
+
                         if is_phased:
                             hap_index = get_haplotype_index(ts, n, ploidy)
                             sample_id = f"tsk_{ts.node(n).individual}_{hap_index}"
                         else:
                             sample_id = f"tsk_{ts.node(n).individual}"
+
                         tracts += f"1\t{int(left)}\t{int(right)}\t{sample_id}\n"
 
     true_tracts = pr.from_string(tracts).merge(by="Sample")
+
     if true_tracts.empty:
         open(output, "w").close()
     else:
@@ -295,8 +215,10 @@ def get_true_tracts(
 with open(snakemake.output.seed_file, "w") as o:
     o.write(f"{snakemake.params.sim['seed']}\n")
 
+
 nsrc1 = 1
 nsrc2 = 1 if snakemake.params.sim["src2_id"] is not None else 0
+
 
 ts = simulate(
     demog=snakemake.input.demes,
@@ -317,11 +239,14 @@ ts = simulate(
     src2_sampling_time=snakemake.params.sim["src2_sampling_time"],
 )
 
+
 ts.dump(snakemake.output.ts)
+
 with open(snakemake.output.vcf, "w") as o:
     # See https://github.com/tskit-dev/tskit/issues/2838
     # msprime is 0-based
     ts.write_vcf(o, allow_position_zero=True)
+
 
 create_sample_lists(
     nref=int(snakemake.wildcards.n_ref),
@@ -334,27 +259,37 @@ create_sample_lists(
     nsrc2=nsrc2,
 )
 
+
 true_tract_output = {
-    "phased": snakemake.output.bed_phased,
-    "unphased": snakemake.output.bed_unphased,
+    "src1": {
+        "phased": snakemake.output.bed_src1_phased,
+        "unphased": snakemake.output.bed_src1_unphased,
+    },
+    "src2": {
+        "phased": snakemake.output.bed_src2_phased,
+        "unphased": snakemake.output.bed_src2_unphased,
+    },
 }
 
+
 for phased_status in ["phased", "unphased"]:
-    true_tracts = get_true_tracts(
+    get_true_tracts(
         ts=ts,
         tgt_id=snakemake.params.sim["tgt_id"],
         src_id=snakemake.params.sim["src1_id"],
-        output=true_tract_output[phased_status],
+        output=true_tract_output["src1"][phased_status],
         is_phased=phased_status == "phased",
         ploidy=int(snakemake.params.sim["ploidy"]),
     )
 
     if snakemake.params.sim["src2_id"] is not None:
-        src2_true_tracts = get_true_tracts(
+        get_true_tracts(
             ts=ts,
             tgt_id=snakemake.params.sim["tgt_id"],
             src_id=snakemake.params.sim["src2_id"],
-            output=true_tract_output[phased_status],
+            output=true_tract_output["src2"][phased_status],
             is_phased=phased_status == "phased",
             ploidy=int(snakemake.params.sim["ploidy"]),
         )
+    else:
+        open(true_tract_output["src2"][phased_status], "w").close()

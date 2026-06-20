@@ -24,13 +24,15 @@ rule simulate_training_data:
     output:
         ts=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.ts"),
         vcf=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.vcf"),
-        bed_phased=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.true.tracts.phased.bed"),
-        bed_unphased=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.true.tracts.unphased.bed"),
         ref_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.ref.list"),
         tgt_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.tgt.list"),
         src_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.src.list"),
         src2_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.src2.list"),
         seed_file=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.seedmsprime"),
+        bed_src1_phased=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.src1.true.tracts.phased.bed"),
+        bed_src1_unphased=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.src1.true.tracts.unphased.bed"),
+        bed_src2_phased=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.src2.true.tracts.phased.bed"),
+        bed_src2_unphased=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/training/rep_{test_rep}/simulation.rep_{training_rep}.src2.true.tracts.unphased.bed"),
     params:
         sim=lambda wildcards: get_simulation_params(wildcards, "training"),
     resources:
@@ -50,14 +52,29 @@ rule simulate_test_data:
         src_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.src.list"),
         src2_list=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.src2.list"),
         seed_file=temp("results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.seedmsprime"),
-        bed_phased="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.phased.bed",
-        bed_unphased="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.unphased.bed",
+        bed_src1_phased="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.src1.true.tracts.phased.bed",
+        bed_src1_unphased="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.src1.true.tracts.unphased.bed",
+        bed_src2_phased="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.src2.true.tracts.phased.bed",
+        bed_src2_unphased="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.src2.true.tracts.unphased.bed",
     params:
         sim=lambda wildcards: get_simulation_params(wildcards, "test"),
     resources:
-        time=1440, mem_mb=16000,
+        time=1440,
+        mem_mb=16000,
     script:
         "../scripts/msprime_simulation.py"
+
+
+rule combine_true_tracts:
+    input:
+        src1="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.src1.true.tracts.{phase_state}.bed",
+        src2="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.src2.true.tracts.{phase_state}.bed",
+    output:
+        bed="results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/simulation/test/rep_{test_rep}/simulation.rep_{test_rep}.true.tracts.{phase_state}.bed",
+    shell:
+        """
+        cat {input.src1} {input.src2} > {output.bed}
+        """
 
 
 rule extract_training_biallelic_snps:
@@ -98,9 +115,10 @@ rule calc_training_sstar_score:
         win_step=50000,
         phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
     wildcard_constraints:
-        training_rep = r"\d+",
+        training_rep=r"\d+",
     resources:
-        mem_mb=16000, cpus=4,
+        mem_mb=16000,
+        cpus=4,
     conda:
         "../envs/sstar.yaml",
     shell:
@@ -113,7 +131,7 @@ rule calc_training_sstar_score:
           --thread {resources.cpus} \
           --win-len {params.win_len} \
           --win-step {params.win_step} \
-          {params.phased_flag} \
+          {params.phased_flag}
         """
 
 
