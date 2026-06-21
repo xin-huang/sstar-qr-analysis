@@ -305,9 +305,15 @@ def get_true_tracts(
     else:
         src_ids = tuple(src_id)
 
-    src_pops = [p.id for p in ts.populations() if p.metadata["name"] in src_ids]
-    if not src_pops:
-        raise ValueError(f"Population {src_id} is not found.")
+    src_pop_by_name = {
+        p.metadata["name"]: p.id
+        for p in ts.populations()
+        if p.metadata["name"] in src_ids
+    }
+    missing_src_ids = set(src_ids) - set(src_pop_by_name)
+    if missing_src_ids:
+        raise ValueError(f"Population(s) {sorted(missing_src_ids)} are not found.")
+    src_pops = list(src_pop_by_name.values())
 
     try:
         tgt_pop = [p.id for p in ts.populations() if p.metadata["name"] == tgt_id][0]
