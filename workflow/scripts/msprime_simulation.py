@@ -260,7 +260,7 @@ def get_true_tracts(
     During tree traversal, an active migration set and tracked target samples are
     used to avoid scanning every tree and every target sample for each migration.
 
-    The output is a tab-delimited string with a header line:
+    The output is written as a tab-delimited BED-like file with columns:
 
         Chromosome  Start  End  Sample
 
@@ -276,9 +276,13 @@ def get_true_tracts(
     tgt_id : str
         Name of the target population, as stored in
         `ts.populations().metadata["name"]`.
-    src_id : str
-        Name of the source population, as stored in
-        `ts.populations().metadata["name"]`.
+    src_id : str or tuple[str, ...] or list[str]
+        Name or names of source populations, as stored in
+        `ts.populations().metadata["name"]`. Multiple source populations are
+        treated as one combined source category.
+    output : str
+        Path to the output BED-like file. An empty file is written when no
+        matching tracts are found.
     is_phased : bool, optional
         Whether to output haplotype-level sample identifiers. Default: True.
     ploidy : int, optional
@@ -286,9 +290,8 @@ def get_true_tracts(
 
     Returns
     -------
-    str
-        A tab-delimited string listing inferred introgressed tracts with columns
-        Chromosome, Start, End, and Sample.
+    None
+        The extracted tracts are written to `output`.
 
     Raises
     ------
@@ -297,9 +300,13 @@ def get_true_tracts(
     """
     header = "Chromosome\tStart\tEnd\tSample\n"
 
-    try:
-        src_pop = [p.id for p in ts.populations() if p.metadata["name"] == src_id][0]
-    except IndexError:
+    if isinstance(src_id, str):
+        src_ids = (src_id,)
+    else:
+        src_ids = tuple(src_id)
+
+    src_pops = [p.id for p in ts.populations() if p.metadata["name"] in src_ids]
+    if not src_pops:
         raise ValueError(f"Population {src_id} is not found.")
 
     try:
@@ -308,10 +315,11 @@ def get_true_tracts(
         raise ValueError(f"Population {tgt_id} is not found.")
 
     # Use NumPy column arrays to select matching migration records once.
-    keep = (ts.migrations_dest == src_pop) & (ts.migrations_source == tgt_pop)
+    keep = np.isin(ts.migrations_dest, src_pops) & (ts.migrations_source == tgt_pop)
 
     if not np.any(keep):
-        return header
+        open(output, "w").close()
+        return
 
     mig_left = ts.migrations_left[keep]
     mig_right = ts.migrations_right[keep]
@@ -346,7 +354,8 @@ def get_true_tracts(
 
     valid = start_tree < end_tree
     if not np.any(valid):
-        return header
+        open(output, "w").close()
+        return
 
     mig_left = mig_left[valid]
     mig_right = mig_right[valid]
@@ -364,7 +373,7 @@ def get_true_tracts(
 
     # Use an insertion-ordered dict as the active migration set.
     active = {}
-    output = [header]
+    tract_lines = [header]
 
     trees = ts.trees(tracked_samples=target_sample_list, sample_lists=True)
 
@@ -407,11 +416,16 @@ def get_true_tracts(
             # with is_descendant.
             for sample_node in tree.samples(ancestor):
                 if is_target_sample[sample_node]:
-                    output.append(
+                    tract_lines.append(
                         f"1\t{int(left)}\t{int(right)}\t"
                         f"{sample_names[sample_node]}\n"
                     )
 
+    if len(tract_lines) == 1:
+        open(output, "w").close()
+        return
+
+    tracts = "".join(tract_lines)
     true_tracts = pr.from_string(tracts).merge(by="Sample")
 
     if true_tracts.empty:
