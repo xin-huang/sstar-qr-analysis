@@ -193,7 +193,6 @@ rule sstar2_2src_match_src1:
         demog_model=TWO_SOURCE_MODELS_REGEX,
     resources:
         mem_mb=16000,
-        cpus=16,
     conda:
         "../envs/sstar2.yaml",
     shell:
@@ -203,8 +202,7 @@ rule sstar2_2src_match_src1:
           --tgt {input.tgt_list} \
           --src {input.src_list} \
           --tract-file {input.tracts} \
-          --output {output.matchrate} \
-          --thread {resources.cpus}
+          --output {output.matchrate}
         """
 
 
@@ -240,7 +238,6 @@ rule sstar2_2src_match_src2:
         demog_model=TWO_SOURCE_MODELS_REGEX,
     resources:
         mem_mb=16000,
-        cpus=16,
     conda:
         "../envs/sstar2.yaml",
     shell:
@@ -250,8 +247,7 @@ rule sstar2_2src_match_src2:
           --tgt {input.tgt_list} \
           --src {input.src_list} \
           --tract-file {input.tracts} \
-          --output {output.matchrate} \
-          --thread {resources.cpus}
+          --output {output.matchrate}
         """
 
 
