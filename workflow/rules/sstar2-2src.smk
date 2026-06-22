@@ -70,6 +70,16 @@ rule render_sstar2_2src_config_template:
             "simulation/test/rep_{test_rep}/"
             "simulation.rep_{test_rep}.biallelic.snps.vcf.gz"
         ),
+        ref_list=(
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
+            "simulation/test/rep_{test_rep}/"
+            "simulation.rep_{test_rep}.ref.list"
+        ),
+        tgt_list=(
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
+            "simulation/test/rep_{test_rep}/"
+            "simulation.rep_{test_rep}.tgt.list"
+        ),
     output:
         config=(
             "results/2src/sstar2/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
@@ -126,6 +136,16 @@ rule run_sstar2_2src_infer:
             "results/2src/sstar2/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
             "{phase_state}/rep_{test_rep}/q_{quantile}/"
             "sstar2.q_{quantile}.rep_{test_rep}.config.yaml"
+        ),
+        ref_list=(
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
+            "simulation/test/rep_{test_rep}/"
+            "simulation.rep_{test_rep}.ref.list"
+        ),
+        tgt_list=(
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
+            "simulation/test/rep_{test_rep}/"
+            "simulation.rep_{test_rep}.tgt.list"
         ),
     output:
         feat=(
