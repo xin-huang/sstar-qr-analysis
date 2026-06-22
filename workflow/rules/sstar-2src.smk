@@ -17,13 +17,6 @@
 #
 #    https://www.gnu.org/licenses/gpl-3.0.en.html
 
-
-def get_phase_flag(wildcards):
-    if wildcards.phase_state == "phased":
-        return "--phased"
-    return ""
-
-
 rule sstar_2src_all:
     input:
         expand(
@@ -34,7 +27,7 @@ rule sstar_2src_all:
             n_ref=N_REFS,
             n_tgt=N_TGTS,
             n_src=N_SRCS,
-            phase_state=PHASE_STATES,
+            phase_state=["unphased"],
             test_rep=range(TEST_REP),
             quantile=cutoffs,
             source_name=["src1", "src2"],
@@ -66,10 +59,10 @@ rule sstar_2src_score:
         ),
     wildcard_constraints:
         demog_model=TWO_SOURCE_MODELS_REGEX,
+        phase_state="unphased",
     params:
         pop_config=get_pop_config,
         win_step=10000,
-        phased_flag=get_phase_flag,
     resources:
         time=360,
         mem_mb=16000,
@@ -85,8 +78,7 @@ rule sstar_2src_score:
           --output {output.scores} \
           --thread {resources.cpus} \
           --win-len {params.pop_config.win_len} \
-          --win-step {params.win_step} \
-          {params.phased_flag}
+          --win-step {params.win_step}
         """
 
 
@@ -101,6 +93,7 @@ rule sstar_2src_quantile:
         ),
     wildcard_constraints:
         demog_model=TWO_SOURCE_MODELS_REGEX,
+        phase_state="unphased",
     params:
         ms_dir="resources/msdir",
         output_dir=(
@@ -111,7 +104,6 @@ rule sstar_2src_quantile:
         sample_size=get_sample_size,
         quantile_start=float(cutoffs.min()),
         quantile_step=0.001,
-        phased_flag=get_phase_flag,
     resources:
         time=360,
         mem_mb=64000,
@@ -137,8 +129,7 @@ rule sstar_2src_quantile:
           --quantile-start {params.quantile_start} \
           --quantile-step {params.quantile_step} \
           --output-dir {params.output_dir} \
-          --thread {resources.cpus} \
-          {params.phased_flag}
+          --thread {resources.cpus}
         """
 
 
@@ -162,8 +153,7 @@ rule sstar_2src_threshold:
         ),
     wildcard_constraints:
         demog_model=TWO_SOURCE_MODELS_REGEX,
-    params:
-        phased_flag=get_phase_flag,
+        phase_state="unphased",
     conda:
         "../envs/sstar.yaml",
     shell:
@@ -173,8 +163,7 @@ rule sstar_2src_threshold:
           --sim-data {input.quantile} \
           --quantile {wildcards.quantile} \
           --output {output.threshold} \
-          --k 8 \
-          {params.phased_flag}
+          --k 8
         """
 
 
@@ -213,8 +202,7 @@ rule sstar_2src_matchrate_src1:
         ),
     wildcard_constraints:
         demog_model=TWO_SOURCE_MODELS_REGEX,
-    params:
-        phased_flag=get_phase_flag,
+        phase_state="unphased",
     resources:
         time=360,
         mem_mb=16000,
@@ -230,8 +218,7 @@ rule sstar_2src_matchrate_src1:
           --src {input.src_list} \
           --score {input.scores} \
           --output {output.matchrate} \
-          --thread {resources.cpus} \
-          {params.phased_flag}
+          --thread {resources.cpus}
         """
 
 
@@ -270,8 +257,7 @@ rule sstar_2src_matchrate_src2:
         ),
     wildcard_constraints:
         demog_model=TWO_SOURCE_MODELS_REGEX,
-    params:
-        phased_flag=get_phase_flag,
+        phase_state="unphased",
     resources:
         time=360,
         mem_mb=16000,
@@ -287,8 +273,7 @@ rule sstar_2src_matchrate_src2:
           --src {input.src_list} \
           --score {input.scores} \
           --output {output.matchrate} \
-          --thread {resources.cpus} \
-          {params.phased_flag}
+          --thread {resources.cpus}
         """
 
 
@@ -322,6 +307,7 @@ rule sstar_2src_tract:
         ),
     wildcard_constraints:
         demog_model=TWO_SOURCE_MODELS_REGEX,
+        phase_state="unphased",
     params:
         output_prefix=(
             "results/2src/sstar/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
