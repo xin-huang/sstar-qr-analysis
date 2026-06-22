@@ -111,6 +111,7 @@ rule sstar_2src_quantile:
         sample_size=get_sample_size,
         quantile_start=float(cutoffs.min()),
         quantile_step=0.001,
+        phased_flag=get_phase_flag,
     resources:
         time=360,
         mem_mb=64000,
@@ -136,7 +137,8 @@ rule sstar_2src_quantile:
           --quantile-start {params.quantile_start} \
           --quantile-step {params.quantile_step} \
           --output-dir {params.output_dir} \
-          --thread {resources.cpus}
+          --thread {resources.cpus} \
+          {params.phased_flag}
         """
 
 
