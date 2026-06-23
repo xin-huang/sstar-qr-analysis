@@ -213,6 +213,7 @@ rule sstar2_2src_match_src1:
         demog_model=TWO_SOURCE_MODELS_REGEX,
     resources:
         mem_mb=16000,
+        time=1440,
     conda:
         "../envs/sstar2.yaml",
     shell:
@@ -258,6 +259,7 @@ rule sstar2_2src_match_src2:
         demog_model=TWO_SOURCE_MODELS_REGEX,
     resources:
         mem_mb=16000,
+        time=1440,
     conda:
         "../envs/sstar2.yaml",
     shell:

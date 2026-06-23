@@ -206,9 +206,9 @@ rule sstar_2src_matchrate_src1:
         demog_model=TWO_SOURCE_MODELS_REGEX,
         phase_state="unphased",
     resources:
-        time=360,
+        time=1440,
         mem_mb=16000,
-        cpus=16,
+        cpus=64,
     conda:
         "../envs/sstar.yaml",
     shell:
@@ -261,9 +261,9 @@ rule sstar_2src_matchrate_src2:
         demog_model=TWO_SOURCE_MODELS_REGEX,
         phase_state="unphased",
     resources:
-        time=360,
+        time=1440,
         mem_mb=16000,
-        cpus=16,
+        cpus=64,
     conda:
         "../envs/sstar.yaml",
     shell:
