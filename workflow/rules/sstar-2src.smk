@@ -27,7 +27,7 @@ rule sstar_2src_all:
             n_ref=N_REFS,
             n_tgt=N_TGTS,
             n_src=N_SRCS,
-            phase_state=["unphased"],
+            phase_state=PHASE_STATES,
             test_rep=range(TEST_REP),
             quantile=cutoffs,
             source_name=["src1", "src2"],
@@ -59,10 +59,10 @@ rule sstar_2src_score:
         ),
     wildcard_constraints:
         demog_model=TWO_SOURCE_MODELS_REGEX,
-        phase_state="unphased",
     params:
         pop_config=get_pop_config,
         win_step=10000,
+        phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
     resources:
         time=360,
         mem_mb=16000,
@@ -78,7 +78,8 @@ rule sstar_2src_score:
           --output {output.scores} \
           --thread {resources.cpus} \
           --win-len {params.pop_config.win_len} \
-          --win-step {params.win_step}
+          --win-step {params.win_step} \
+          {params.phased_flag}
         """
 
 
@@ -93,7 +94,6 @@ rule sstar_2src_quantile:
         ),
     wildcard_constraints:
         demog_model=TWO_SOURCE_MODELS_REGEX,
-        phase_state="unphased",
     params:
         ms_dir="resources/msdir",
         output_dir=(
@@ -105,6 +105,7 @@ rule sstar_2src_quantile:
         quantile_start=float(cutoffs.min()),
         quantile_step=0.001,
         seeds=get_sstar_quantile_seeds,
+        phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
     resources:
         time=360,
         mem_mb=64000,
@@ -131,7 +132,8 @@ rule sstar_2src_quantile:
           --quantile-step {params.quantile_step} \
           --output-dir {params.output_dir} \
           --seeds {params.seeds} \
-          --thread {resources.cpus}
+          --thread {resources.cpus} \
+          {params.phased_flag}
         """
 
 
@@ -155,7 +157,8 @@ rule sstar_2src_threshold:
         ),
     wildcard_constraints:
         demog_model=TWO_SOURCE_MODELS_REGEX,
-        phase_state="unphased",
+    params:
+        phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
     conda:
         "../envs/sstar.yaml",
     shell:
@@ -165,7 +168,8 @@ rule sstar_2src_threshold:
           --sim-data {input.quantile} \
           --quantile {wildcards.quantile} \
           --output {output.threshold} \
-          --k 8
+          --k 8 \
+          {params.phased_flag}
         """
 
 
@@ -204,7 +208,8 @@ rule sstar_2src_matchrate_src1:
         ),
     wildcard_constraints:
         demog_model=TWO_SOURCE_MODELS_REGEX,
-        phase_state="unphased",
+    params:
+        phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
     resources:
         time=1440,
         mem_mb=16000,
@@ -220,7 +225,8 @@ rule sstar_2src_matchrate_src1:
           --src {input.src_list} \
           --score {input.scores} \
           --output {output.matchrate} \
-          --thread {resources.cpus}
+          --thread {resources.cpus} \
+          {params.phased_flag}
         """
 
 
@@ -259,7 +265,8 @@ rule sstar_2src_matchrate_src2:
         ),
     wildcard_constraints:
         demog_model=TWO_SOURCE_MODELS_REGEX,
-        phase_state="unphased",
+    params:
+        phased_flag=lambda wildcards: "--phased" if wildcards.phase_state == "phased" else "",
     resources:
         time=1440,
         mem_mb=16000,
@@ -275,7 +282,8 @@ rule sstar_2src_matchrate_src2:
           --src {input.src_list} \
           --score {input.scores} \
           --output {output.matchrate} \
-          --thread {resources.cpus}
+          --thread {resources.cpus} \
+          {params.phased_flag}
         """
 
 
@@ -297,6 +305,16 @@ rule sstar_2src_tract:
             "sstar.{phase_state}.rep_{test_rep}.src2.matchrate.tsv"
         ),
     output:
+        src1_matchrate=(
+            "results/2src/sstar/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
+            "{phase_state}/rep_{test_rep}/"
+            "sstar.{phase_state}.q_{quantile}.rep_{test_rep}.src1.inferred.tracts.matchrate.bed"
+        ),
+        src2_matchrate=(
+            "results/2src/sstar/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
+            "{phase_state}/rep_{test_rep}/"
+            "sstar.{phase_state}.q_{quantile}.rep_{test_rep}.src2.inferred.tracts.matchrate.bed"
+        ),
         src1=(
             "results/2src/sstar/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
             "{phase_state}/rep_{test_rep}/"
@@ -309,7 +327,6 @@ rule sstar_2src_tract:
         ),
     wildcard_constraints:
         demog_model=TWO_SOURCE_MODELS_REGEX,
-        phase_state="unphased",
     params:
         output_prefix=(
             "results/2src/sstar/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
@@ -325,6 +342,36 @@ rule sstar_2src_tract:
           --output-prefix {params.output_prefix} \
           --match-rate {input.src1_matchrate} {input.src2_matchrate}
 
-        mv {params.output_prefix}.src1.bed {output.src1}
-        mv {params.output_prefix}.src2.bed {output.src2}
+        mv {params.output_prefix}.src1.bed {output.src1_matchrate}
+        mv {params.output_prefix}.src2.bed {output.src2_matchrate}
+
+        awk 'BEGIN{{FS=OFS="\t"}} {{print $1,$2,$3,$4}}' {output.src1_matchrate} > {output.src1}
+        awk 'BEGIN{{FS=OFS="\t"}} {{print $1,$2,$3,$4}}' {output.src2_matchrate} > {output.src2}
         """
+
+rule evaluate_sstar_2src:
+    input:
+        true_tracts=(
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
+            "simulation/test/rep_{test_rep}/"
+            "simulation.rep_{test_rep}.{source_name}.true.tracts.{phase_state}.bed"
+        ),
+        inferred_tracts=(
+            "results/2src/sstar/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
+            "{phase_state}/rep_{test_rep}/"
+            "sstar.{phase_state}.q_{quantile}.rep_{test_rep}.{source_name}.inferred.tracts.bed"
+        ),
+    output:
+        tsv=(
+            "results/2src/sstar/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
+            "{phase_state}/rep_{test_rep}/"
+            "sstar.{phase_state}.q_{quantile}.rep_{test_rep}.{source_name}.perf.tsv"
+        ),
+    wildcard_constraints:
+        demog_model=TWO_SOURCE_MODELS_REGEX,
+        source_name="src1|src2",
+    params:
+        length_bp=TEST_LENGTH_BP,
+        cutoff="{quantile}",
+    script:
+        "../scripts/segment_based_evaluation.py"

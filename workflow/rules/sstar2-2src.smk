@@ -286,6 +286,16 @@ rule sstar2_2src_assign:
             "sstar2.q_{quantile}.rep_{test_rep}.src2.match.rate.bed"
         ),
     output:
+        src1_matchrate=(
+            "results/2src/sstar2/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
+            "{phase_state}/rep_{test_rep}/q_{quantile}/"
+            "sstar2.q_{quantile}.rep_{test_rep}.src1.inferred.tracts.matchrate.bed"
+        ),
+        src2_matchrate=(
+            "results/2src/sstar2/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
+            "{phase_state}/rep_{test_rep}/q_{quantile}/"
+            "sstar2.q_{quantile}.rep_{test_rep}.src2.inferred.tracts.matchrate.bed"
+        ),
         src1=(
             "results/2src/sstar2/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
             "{phase_state}/rep_{test_rep}/q_{quantile}/"
@@ -312,4 +322,38 @@ rule sstar2_2src_assign:
           --match-rate {input.src1_matchrate} {input.src2_matchrate} \
           --source-name src1 src2 \
           --output-prefix {params.output_prefix}
+
+        mv {params.output_prefix}.src1.inferred.tracts.bed {output.src1_matchrate}
+        mv {params.output_prefix}.src2.inferred.tracts.bed {output.src2_matchrate}
+
+        awk 'BEGIN{{FS=OFS="\t"}} {{print $1,$2,$3,$4}}' {output.src1_matchrate} > {output.src1}
+        awk 'BEGIN{{FS=OFS="\t"}} {{print $1,$2,$3,$4}}' {output.src2_matchrate} > {output.src2}
         """
+
+
+rule evaluate_sstar2_2src:
+    input:
+        true_tracts=(
+            "results/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
+            "simulation/test/rep_{test_rep}/"
+            "simulation.rep_{test_rep}.{source_name}.true.tracts.{phase_state}.bed"
+        ),
+        inferred_tracts=(
+            "results/2src/sstar2/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
+            "{phase_state}/rep_{test_rep}/q_{quantile}/"
+            "sstar2.q_{quantile}.rep_{test_rep}.{source_name}.inferred.tracts.bed"
+        ),
+    output:
+        tsv=(
+            "results/2src/sstar2/{demog_model}/nref_{n_ref}/ntgt_{n_tgt}/nsrc_{n_src}/"
+            "{phase_state}/rep_{test_rep}/"
+            "sstar2.{phase_state}.q_{quantile}.rep_{test_rep}.{source_name}.perf.tsv"
+        ),
+    wildcard_constraints:
+        demog_model=TWO_SOURCE_MODELS_REGEX,
+        source_name="src1|src2",
+    params:
+        length_bp=TEST_LENGTH_BP,
+        cutoff="{quantile}",
+    script:
+        "../scripts/segment_based_evaluation.py"

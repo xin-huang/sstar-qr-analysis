@@ -25,7 +25,7 @@ import numpy as np
 
 
 TRAINING_REP = 1000
-TEST_REP = 1
+TEST_REP = 10
 DEMOGRAPHIC_MODELS = [
     #"ArchIE_3D19",
     #"HumanNeanderthal_4G21",
@@ -148,3 +148,4 @@ include: "rules/sstar-2src.smk"
 include: "rules/sstar2-2src.smk"
 include: "rules/qr.smk"
 include: "rules/performance.smk"
+include: "rules/performance-2src.smk"

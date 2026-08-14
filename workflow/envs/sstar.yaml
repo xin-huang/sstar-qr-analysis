@@ -14,4 +14,4 @@ dependencies:
   - r-essentials=4.1
   - rpy2=3.5.11
   - pip:
-      - git+https://github.com/xin-huang/sstar.git@v1
+      - git+https://github.com/xin-huang/sstar.git@1b10028b4b2d3256e2eed7eea1c96651957816fb
