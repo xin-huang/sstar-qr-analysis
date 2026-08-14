@@ -64,6 +64,14 @@ def get_sample_size(wildcards):
     }
 
 
+def get_sstar_quantile_seeds(wildcards):
+    base_seed = int(seed_lists["test"][int(wildcards.test_rep)])
+    max_seed = 2**16 - 1
+    seeds = [((base_seed + offset - 1) % max_seed) + 1 for offset in range(3)]
+
+    return " ".join(str(seed) for seed in seeds)
+
+
 def get_sstar2_config_params(wildcards):
     pop = get_pop_config(wildcards)
 

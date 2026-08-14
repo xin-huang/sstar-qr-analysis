@@ -19,4 +19,4 @@ dependencies:
   - scipy=1.17.1
   - skl2onnx=1.19.1
   - pip:
-      - git+https://github.com/xin-huang/sstar.git
+      - git+https://github.com/xin-huang/sstar.git@81655b820e112ae7186fcb2f233c947bc2fecf94
