@@ -71,12 +71,8 @@ summary.to_csv(
 )
 
 
-phase_states = ["phased", "unphased"]
-
-demog_models = [
-    "ChimpBonoboGhost_4K19",
-    "HumanNeanderthalDenisovan_PapuansOutOfAfrica_10J19",
-]
+phase_states = list(dict.fromkeys(all_df["phase_state"]))
+demog_models = list(dict.fromkeys(all_df["demog_model"]))
 
 methods = ["sstar", "sstar2"]
 source_names = ["src1", "src2"]
